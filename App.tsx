@@ -13,13 +13,16 @@ const App: React.FC = () => {
 
   return (
     <CampaignProvider>
-      <div className="min-h-screen bg-iron-950 text-slate-300 selection:bg-purple-900 selection:text-white">
+      <div className="min-h-screen bg-iron-950 text-slate-300 selection:bg-purple-900 selection:text-white relative">
+        {/* Global Texture Overlay */}
+        <div className="fixed inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 pointer-events-none z-0 mix-blend-overlay" />
+        
         <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
         
         {/* Navigation (Table of Contents) only shows on Story tab */}
         {activeTab === 'story' && <Navigation />}
         
-        <main className="pt-16">
+        <main className="pt-16 relative z-10">
           {activeTab === 'story' && (
             <>
               <Hero />
@@ -46,7 +49,7 @@ const App: React.FC = () => {
           )}
         </main>
 
-        <footer className="py-12 bg-iron-950 border-t border-slate-900 text-center">
+        <footer className="py-12 bg-iron-950 border-t border-slate-900 text-center relative z-10">
           <div className="max-w-2xl mx-auto px-4">
             <p className="font-display text-slate-500 mb-2">O Mecanismo da Sombra</p>
             <p className="font-sans text-xs text-slate-700">

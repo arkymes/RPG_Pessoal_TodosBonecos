@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Hammer, Eye, ShieldAlert, Skull, Anchor, Pencil, Save, Wand2, Loader2, RefreshCw, Shield } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
+import { Hammer, ShieldAlert, Skull, Anchor, Pencil, Save, Shield } from 'lucide-react';
 import { useCampaign } from '../context/CampaignContext';
 
 const CharacterInfo: React.FC = () => {
-  const { images, setImage } = useCampaign();
+  const { images } = useCampaign();
   const [isEditing, setIsEditing] = useState(false);
-  const [isGeneratingImg, setIsGeneratingImg] = useState(false);
-  const [showImgPrompt, setShowImgPrompt] = useState(false);
-  const [imgPromptText, setImgPromptText] = useState("");
   
   // Estado para os dados editáveis
   const [charData, setCharData] = useState({
@@ -23,65 +19,6 @@ const CharacterInfo: React.FC = () => {
 
   const handleChange = (field: string, value: string) => {
     setCharData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleGenerateImage = async () => {
-    if (!process.env.API_KEY) {
-        alert("API Key não configurada no ambiente.");
-        return;
-    }
-
-    setIsGeneratingImg(true);
-    try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const currentImage = images['logan_portrait'];
-        
-        let contents;
-        // Prompt base com descrição física TRAVADA para evitar "velhos" ou "homens parrudos" e garantir altura
-        const basePrompt = "Full body character concept of Logan Rylan, young human male (18 years old), height 1.41m (very short stature but strictly human proportions, not a dwarf, not a gnome), lean and wiry athletic build, messy black hair, fair skin, focused eyes. Wearing custom splint armor (vertical metal strips over leather) with exposed hydraulic pistons and gears that look like a support exoskeleton. Holding a heavy pneumatic warhammer with glowing blue copper tubes. Stoic, serene, emotionless expression. Steampunk D&D 5e art style, masterpiece. Isolated on pure white background.";
-        
-        if (currentImage && imgPromptText.trim()) {
-            const cleanBase64 = currentImage.split(',')[1] || currentImage;
-            contents = {
-                parts: [
-                    { inlineData: { mimeType: 'image/png', data: cleanBase64 } },
-                    { text: `Edit this character: ${imgPromptText}. Keep him young, extremely short (1.41m) and human proportions with stoic expression. Keep white background.` }
-                ]
-            };
-        } else {
-            const finalPrompt = imgPromptText.trim() 
-                ? `${basePrompt} Feature: ${imgPromptText}`
-                : basePrompt;
-                
-            contents = {
-                parts: [{ text: finalPrompt }]
-            };
-        }
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: contents,
-            config: {
-                imageConfig: { aspectRatio: "3:4" }
-            }
-        });
-
-        const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-
-        if (part && part.inlineData) {
-            const base64Image = `data:image/png;base64,${part.inlineData.data}`;
-            await setImage('logan_portrait', base64Image); // Await para garantir que não houve erro no DB
-            setShowImgPrompt(false);
-            setImgPromptText("");
-        } else {
-            alert("Não foi possível gerar a imagem. A IA não retornou dados.");
-        }
-    } catch (error: any) {
-        console.error(error);
-        alert(`Erro ao gerar: ${error.message || "Falha de conexão"}`);
-    } finally {
-        setIsGeneratingImg(false);
-    }
   };
 
   const characterImageSrc = images['logan_portrait'] || "/images/logan.png";
@@ -124,52 +61,7 @@ const CharacterInfo: React.FC = () => {
                  </div>
                  <div className="h-px bg-copper-900/50 w-full" />
                </div>
-
-               <button 
-                  onClick={() => setShowImgPrompt(!showImgPrompt)}
-                  className="absolute top-2 right-2 p-2 bg-iron-900/80 text-copper-500 rounded-full hover:bg-copper-600 hover:text-white transition-all shadow-lg z-20"
-                  title="Alterar Aparência do Personagem"
-               >
-                  <Wand2 className="w-4 h-4" />
-               </button>
             </div>
-
-            {/* Painel de Edição da Imagem */}
-            {showImgPrompt && (
-                <div className="absolute inset-0 bg-iron-950/95 z-30 flex flex-col p-4 animate-in fade-in duration-200">
-                    <h3 className="text-copper-500 font-display text-sm mb-2 flex items-center gap-2">
-                        <Wand2 className="w-4 h-4" />
-                        {hasCustomImage ? "Editar Visual Atual" : "Gerar Novo Visual"}
-                    </h3>
-                    <p className="text-xs text-slate-400 mb-3 leading-relaxed">
-                        {hasCustomImage 
-                            ? "Descreva o que mudou (ex: 'adicionar uma capa de couro', 'colocar óculos'). A IA tentará manter a identidade atual." 
-                            : "Descreva detalhes específicos para gerar o retrato inicial (armadura, martelo, etc)."}
-                    </p>
-                    <textarea 
-                        value={imgPromptText}
-                        onChange={(e) => setImgPromptText(e.target.value)}
-                        placeholder={hasCustomImage ? "Ex: Adicionar cicatriz no rosto..." : "Ex: Vestindo armadura pesada e segurando martelo..."}
-                        className="w-full flex-1 bg-iron-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:border-copper-500 outline-none resize-none mb-3"
-                    />
-                    <div className="flex gap-2">
-                        <button 
-                            onClick={() => setShowImgPrompt(false)}
-                            className="flex-1 py-2 text-xs font-bold text-slate-500 hover:text-slate-300 border border-slate-700 rounded"
-                        >
-                            Cancelar
-                        </button>
-                        <button 
-                            onClick={handleGenerateImage}
-                            disabled={isGeneratingImg}
-                            className="flex-1 py-2 bg-copper-600 text-iron-950 text-xs font-bold rounded hover:bg-copper-500 flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                            {isGeneratingImg ? <Loader2 className="w-3 h-3 animate-spin" /> : (hasCustomImage ? <RefreshCw className="w-3 h-3" /> : <Wand2 className="w-3 h-3" />)}
-                            {hasCustomImage ? "Atualizar" : "Gerar"}
-                        </button>
-                    </div>
-                </div>
-            )}
           </div>
 
           <div className="bg-iron-900/50 border border-slate-800/50 rounded-lg p-6 relative">
@@ -178,7 +70,7 @@ const CharacterInfo: React.FC = () => {
                 <button 
                     onClick={() => setIsEditing(!isEditing)}
                     className={`p-1.5 rounded transition-colors ${isEditing ? 'bg-copper-600 text-white' : 'text-slate-500 hover:text-copper-400'}`}
-                    title={isEditing ? "Salvar Alterações" : "Editar Grimório"}
+                    title={isEditing ? "Salvar Alterações" : "Editar Texto"}
                 >
                     {isEditing ? <Save className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
                 </button>

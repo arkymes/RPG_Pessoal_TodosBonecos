@@ -1,8 +1,8 @@
 import { Chapter } from './types';
 
 // Descrições reutilizáveis para garantir consistência
-// LOGAN: Ajustado para "strictly human proportions" para evitar parecer gnomo/anão
-const CHAR_LOGAN = "Logan Rylan (young human male, 18 years old, height 1.41m, short stature but strictly human proportions, not a dwarf, not a gnome, lean and wiry, messy black hair, fair skin, stoic and emotionless face, he does't look ill)";
+// LOGAN: Adicionado "ROUND HUMAN EARS" e reforçado "NOT A DWARF" para combater o viés da IA no epílogo
+const CHAR_LOGAN = "Logan Rylan (young human male, 18 years old, height 1.41m, short stature but strictly human proportions, round human ears, no beard, delicate human facial features, not a dwarf, not a gnome, lean and wiry, messy black hair, fair skin, stoic and emotionless face)";
 
 // GARETH: Enfatizando "19 years old student" para remover o aspecto de "velho milionário"
 const CHAR_GARETH = "Gareth Aldren (young human male student, 19 years old, fresh youthful face, tall, blonde hair, charming smile, wearing expensive magical academy student uniform - not old robes)";
@@ -17,7 +17,8 @@ export const STORY_DATA: Chapter[] = [
     id: "chapter-1",
     number: "Capítulo 1",
     title: "A Engrenagem Sobressalente",
-    imagePrompt: `steampunk workshop basement, ${CHAR_KOGGLE} standing next to ${CHAR_LOGAN} (who is noticeably short for a human but has human anatomy), Logan is wearing simple workman clothes, brass gears, copper pipes, hydraulic components, warm lighting, detailed clutter, fantasy art style`,
+    // HIGH ANGLE: Mostra a mesa bagunçada de cima, enfatizando a escala
+    imagePrompt: `High angle top-down view of a messy steampunk workbench, ${CHAR_LOGAN} working on intricate small gears with tweezers, ${CHAR_KOGGLE} watching from the side, workshop cluttered with brass pipes and steam, depth of field focused on Logan's hands, cinematic lighting, detailed atmosphere`,
     content: `Para Logan Rylan, o mundo sempre pareceu uma máquina emperrada — atrito onde deveria haver encaixe perfeito.
 
 A mansão dos Rylan, nos subúrbios fumacentos de Esmeltaran, não era casa. Era fábrica disfarçada de nobreza. O ar fedia a óleo queimado misturado com fuligem grossa — aquele tipo de cheiro que gruda na pele e não sai nem com sabão. Até no "Refeitório dos Menores" — nome pomposo para o cantinho esquecido onde os filhos "extras" comiam — o cheiro grudava nas paredes.
@@ -53,7 +54,8 @@ Logan embarcou no navio mercante *Dama de Ferro* rumo ao norte. Levou suas ferra
     id: "chapter-2",
     number: "Capítulo 2",
     title: "A Cidade das Linhas de Prata",
-    imagePrompt: `futuristic fantasy city street, mix of ancient elven white stone architecture and brutalist bunkers, crowd of tall people queuing for a temple, ${CHAR_LOGAN} walking in the crowd, he is noticeably shorter than everyone else but clearly human, wearing a backpack and simple traveler clothes looking up at magical glowing scaffolds, cinematic shot`,
+    // LOW ANGLE: Mantido o ângulo bom, mas forçando humanos na multidão
+    imagePrompt: `Low angle shot looking up from street level, majestic futuristic fantasy city with glowing scaffolds, crowd of ordinary HUMANS with round ears (no elves) waiting in line, ${CHAR_LOGAN} walking through the crowd looking up in awe, towering white stone architecture, cinematic scale, volumetric lighting`,
     content: `Albion atingiu Logan como um soco nos sentidos. Sua terra natal era ouro velho, política empoeirada e gente que parava de se mexer. Albion era cicatriz aberta, tijolo sobre entulho e uma esperança tão feroz que quase dava para tocar.
 
 A capital, *Online*, subia no horizonte como se desafiasse o céu a derrubá-la de novo. Logan conhecia as histórias — "5 Quilômetros", a tirania do Imperador Palpatine, a época em que magia era crime e virava combustível de guerra. Mas a cidade que ele encontrou ao desembarcar não parecia fantasma de nada. Pulsava. Vibrava. Os elfos a chamavam de *Aon-Lae'in* — A Convergência das Linhas de Prata. Logan achava que parecia mais "A Cidade que Recusou Morrer".
@@ -84,7 +86,8 @@ Caos organizado. Contradição viva. Albion era tudo que Logan não era. Imprevi
     id: "chapter-3",
     number: "Capítulo 3",
     title: "A Rotina na Corte das Corujas",
-    imagePrompt: `magic academy laboratory, ${CHAR_GARETH} standing beside ${CHAR_LOGAN}, contrast in height is visible (Gareth is much taller), Logan wearing a student uniform apron fixing a mechanical construct, messy workbench, cinematic lighting, magical sparks, contrast between the handsome noble student and the short human worker`,
+    // OVER THE SHOULDER: Perspectiva do Logan olhando para o Gareth
+    imagePrompt: `Over the shoulder shot from behind ${CHAR_LOGAN} (in foreground, slightly out of focus), looking up at ${CHAR_GARETH} who is holding a glowing magical device triumphantly in a laboratory, showing the height difference and Gareth's charisma, magical sparks in the air, detailed background`,
     content: `A Corte das Corujas não rolou tapete vermelho para Logan Rylan. Não tinha trombetas, nem cerimônia de boas-vindas. Ele entrou pelos fundos, segurando uma vassoura e vestindo um avental que cheirava a mofo.
 
 A prestigiada academia de magia e engenharia de Albion tinha portões dourados na frente — para gente com sobrenome e dinheiro. Logan tinha uma mochila surrada e o equivalente a três semanas de aluguel no bolso. O trabalho disponível? Zelador assistente da Ala de Artifícios. Não era glamouroso. Era sobrevivência.
@@ -126,7 +129,8 @@ Logan acreditou. A vida na Corte era intensa. Ele devorava cada aula, cada livro
     id: "chapter-4",
     number: "Capítulo 4",
     title: "O Sussurro de Shadowmoor",
-    imagePrompt: `dark forest clearing, unnaturally dark, black organic pedestal with pulsating purple veins, ominous dark grimoire on top, ${CHAR_LOGAN} wearing medieval academy student tunic and robes reaching out to touch the book, Logan looks small and vulnerable next to the pedestal, terrified and mesmerized expression, liquid shadows, horror atmosphere`,
+    // DUTCH ANGLE: Câmera torta para dar aflição/terror
+    imagePrompt: `Dutch angle tilted camera shot, horror atmosphere, close up on a ominous black grimoire on a pedestal with pulsating veins, ${CHAR_LOGAN} reaching out to touch it with trembling hand, liquid shadows dripping, unnerving composition, dark forest background`,
     content: `Segundo ano. Expedição de campo obrigatória. A *Orla do Crepúsculo* — uma faixa de terra onde a realidade era fina como papel molhado e a magia selvagem vazava de planos que ninguém deveria visitar.
 
 A floresta era errada. As árvores tinham cascas cinzentas, textura de pele morta esticada sobre ossos podres. O silêncio era absoluto, quebrado só pelo estalar de galhos secos que ninguém pisava. Logan mantinha os olhos na bússola de mana, ignorando o frio que subia pela espinha.
@@ -168,7 +172,8 @@ Logan aceitou. Catalogou mentalmente: *Maldição de Shadowmoor. Efeitos: interf
     id: "chapter-5",
     number: "Capítulo 5",
     title: "O Pastor e o Escudo",
-    imagePrompt: `steampunk workshop at night, ${CHAR_GARETH} (looking like a young student) offering a glass of wine to ${CHAR_LOGAN} (short human stature), dismantled mechanical hound (Iron Shepherd) on table, glowing hexagonal shield device 'Aegis' floating with blue runes, atmosphere of exhaustion and betrayal, cinematic lighting, 8k masterpiece`,
+    // EXTREME CLOSE UP: Foco na taça de vinho, o resto desfocado
+    imagePrompt: `Extreme close up macro shot of a glass of red wine being held by a hand, focus on the red liquid reflection, background is blurred showing ${CHAR_GARETH} smiling and ${CHAR_LOGAN} in a workshop, atmosphere of subtle betrayal, cinematic bokeh`,
     content: `O Grande Concurso de Inovação Real estava chegando. Cinco mil peças de ouro. Título de Engenheiro Real Júnior. Para Logan, a saída da pobreza. Para Gareth, a salvação de sua família falida — algo que ele escondia desesperadamente.
 
 — Vamos fazer história, irmão — Gareth disse, com um brilho febril nos olhos.
@@ -202,7 +207,8 @@ Escuridão sem sonhos.`
     id: "chapter-6",
     number: "Capítulo 6",
     title: "A Queda e o Exílio",
-    imagePrompt: `grand royal presentation hall, golden lighting, ${CHAR_GARETH} (young handsome student) on stage demonstrating a floating magical shield to ${CHAR_KING}, ${CHAR_LOGAN} (very short human figure) watching from the shadows of a doorway wearing simple dirty clothes looking disheveled and betrayed, deep emotional contrast, cinematic, fantasy art`,
+    // WIDE SHOT (Plano Aberto): Enfatiza o isolamento do Logan
+    imagePrompt: `Wide shot from the back of a grand royal hall, silhouette of small ${CHAR_LOGAN} in the dark foreground walking away, far away in the bright center stage is ${CHAR_GARETH} presenting a glowing shield to ${CHAR_KING}, sharp contrast between the dark foreground and bright background, visual storytelling of exile`,
     content: `Logan acordou com a cabeça latejando. A luz da manhã entrava cruel. O laboratório estava silencioso.
 
 Silêncio errado.
@@ -248,7 +254,8 @@ Ele voltaria.`
     id: "epilogue",
     number: "Epílogo",
     title: "O Primeiro Passo",
-    imagePrompt: `dwarven forge interior, ${CHAR_LOGAN} (human with short stature 1.41m) putting on custom splint armor made of vertical metal strips and leather, holding a warhammer with glowing blue copper tubes (pneumatic), expression is calm and emotionless, serene determination, lean and wiry body frame in armor, fantasy style, volumetric lighting`,
+    // HERO SHOT: De baixo para cima, fazendo ele parecer imponente
+    imagePrompt: `Low angle hero shot from the ground looking up at ${CHAR_LOGAN} (human, 1.41m) wearing custom splint armor, holding pneumatic warhammer against shoulder, standing tall inside a forge, dramatic rim lighting, sense of determination and new beginning, masterpiece`,
     content: `Seis meses depois.
 
 A Forja Grímsdottir cheirava a carvão e ferro. Logan martelava a última dobradiça de uma placa de ombro.

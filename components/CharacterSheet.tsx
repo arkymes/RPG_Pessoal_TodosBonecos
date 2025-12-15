@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Save, Shield, Heart, Zap, Swords, Brain, Scroll, Coins, Backpack, ChevronDown, ChevronUp, Dna, Flame, Trash2, Plus, Shirt, Anchor, AlertTriangle, Hexagon } from 'lucide-react';
-
-// --- TIPOS E INTERFACES ---
+import { Save, Shield, Heart, Zap, Swords, Brain, Scroll, Coins, Backpack, ChevronDown, ChevronUp, Dna, Flame, Trash2, Plus, Shirt, Anchor, AlertTriangle, Hexagon, Globe, Clock, Move, Hourglass, BookOpen, Sparkles, X } from 'lucide-react';
+import WikidotImporter from './WikidotImporter';
 
 type ItemType = 'weapon' | 'armor' | 'shield' | 'misc';
 
@@ -25,6 +24,13 @@ interface Spell {
   id: string;
   name: string;
   prepared: boolean;
+  level: number;
+  school?: string;
+  castingTime?: string;
+  range?: string;
+  components?: string;
+  duration?: string;
+  description?: string;
 }
 
 interface CharacterSheetData {
@@ -68,8 +74,6 @@ interface CharacterSheetData {
     spells: Array<Array<Spell>>;
   };
 }
-
-// --- DADOS PADRÃO ---
 
 const DEFAULT_INVENTORY: Item[] = [
     { id: 'wpn_1', name: 'Manopla Trovejante', type: 'weapon', equipped: true, damage: '1d8', damageType: 'Trovão', properties: ['Simples'] },
@@ -119,48 +123,17 @@ const DEFAULT_DATA: CharacterSheetData = {
   }
 };
 
-// --- CONFIGURAÇÃO VISUAL AVANÇADA ---
-// Cores hardcoded para o Tailwind pegar nas classes dinâmicas ou usando style inline
 const ABILITY_CONFIG = [
-  { 
-    key: 'str', label: 'Força', 
-    theme: { text: 'text-red-400', bg: 'bg-red-500', border: 'border-red-500', shadow: 'shadow-red-500' },
-    skills: { athletics: 'Atletismo' } 
-  },
-  { 
-    key: 'dex', label: 'Destreza', 
-    theme: { text: 'text-emerald-400', bg: 'bg-emerald-500', border: 'border-emerald-500', shadow: 'shadow-emerald-500' },
-    skills: { acrobatics: 'Acrobacia', sleightOfHand: 'Prestidigitação', stealth: 'Furtividade' } 
-  },
-  { 
-    key: 'con', label: 'Constituição', 
-    theme: { text: 'text-orange-400', bg: 'bg-orange-500', border: 'border-orange-500', shadow: 'shadow-orange-500' },
-    skills: {} 
-  },
-  { 
-    key: 'int', label: 'Inteligência', 
-    theme: { text: 'text-cyan-400', bg: 'bg-cyan-500', border: 'border-cyan-500', shadow: 'shadow-cyan-500' },
-    skills: { arcana: 'Arcanismo', history: 'História', investigation: 'Investigação', nature: 'Natureza', religion: 'Religião' } 
-  },
-  { 
-    key: 'wis', label: 'Sabedoria', 
-    theme: { text: 'text-purple-400', bg: 'bg-purple-500', border: 'border-purple-500', shadow: 'shadow-purple-500' },
-    skills: { animalHandling: 'Lidar c/ Animais', insight: 'Intuição', medicine: 'Medicina', perception: 'Percepção', survival: 'Sobrevivência' } 
-  },
-  { 
-    key: 'cha', label: 'Carisma', 
-    theme: { text: 'text-pink-400', bg: 'bg-pink-500', border: 'border-pink-500', shadow: 'shadow-pink-500' },
-    skills: { deception: 'Enganação', intimidation: 'Intimidação', performance: 'Atuação', persuasion: 'Persuasão' } 
-  },
+  { key: 'str', label: 'Força', theme: { text: 'text-red-400', bg: 'bg-red-500', border: 'border-red-500', shadow: 'shadow-red-500' }, skills: { athletics: 'Atletismo' } },
+  { key: 'dex', label: 'Destreza', theme: { text: 'text-emerald-400', bg: 'bg-emerald-500', border: 'border-emerald-500', shadow: 'shadow-emerald-500' }, skills: { acrobatics: 'Acrobacia', sleightOfHand: 'Prestidigitação', stealth: 'Furtividade' } },
+  { key: 'con', label: 'Constituição', theme: { text: 'text-orange-400', bg: 'bg-orange-500', border: 'border-orange-500', shadow: 'shadow-orange-500' }, skills: {} },
+  { key: 'int', label: 'Inteligência', theme: { text: 'text-cyan-400', bg: 'bg-cyan-500', border: 'border-cyan-500', shadow: 'shadow-cyan-500' }, skills: { arcana: 'Arcanismo', history: 'História', investigation: 'Investigação', nature: 'Natureza', religion: 'Religião' } },
+  { key: 'wis', label: 'Sabedoria', theme: { text: 'text-purple-400', bg: 'bg-purple-500', border: 'border-purple-500', shadow: 'shadow-purple-500' }, skills: { animalHandling: 'Lidar c/ Animais', insight: 'Intuição', medicine: 'Medicina', perception: 'Percepção', survival: 'Sobrevivência' } },
+  { key: 'cha', label: 'Carisma', theme: { text: 'text-pink-400', bg: 'bg-pink-500', border: 'border-pink-500', shadow: 'shadow-pink-500' }, skills: { deception: 'Enganação', intimidation: 'Intimidação', performance: 'Atuação', persuasion: 'Persuasão' } },
 ] as const;
 
-
-// --- UTILITÁRIOS ---
 const MOD = (score: number | undefined) => Math.floor(((score || 10) - 10) / 2);
 
-// --- COMPONENTES VISUAIS ---
-
-// Toggle Estilizado (Diamante/Losango)
 const DiamondToggle = ({ checked, onChange, theme, size = "md" }: { checked: boolean, onChange: (v: boolean) => void, theme: any, size?: "sm"|"md" }) => {
     return (
         <button 
@@ -168,36 +141,25 @@ const DiamondToggle = ({ checked, onChange, theme, size = "md" }: { checked: boo
             className="relative flex items-center justify-center group outline-none focus:outline-none"
             style={{ width: size === "sm" ? 16 : 24, height: size === "sm" ? 16 : 24 }}
         >
-            {/* Glow Effect */}
             <div className={`absolute inset-0 transition-all duration-300 rounded-sm rotate-45 ${checked ? `opacity-60 blur-[4px] ${theme.bg}` : 'opacity-0'}`} />
-            
-            {/* The Shape */}
-            <div className={`
-                relative w-full h-full rotate-45 border transition-all duration-300 flex items-center justify-center
-                ${checked ? `${theme.bg} ${theme.border}` : 'bg-iron-950 border-slate-700 group-hover:border-slate-500'}
-                ${size === "sm" ? "border" : "border-2"}
-            `}>
+            <div className={`relative w-full h-full rotate-45 border transition-all duration-300 flex items-center justify-center ${checked ? `${theme.bg} ${theme.border}` : 'bg-iron-950 border-slate-700 group-hover:border-slate-500'} ${size === "sm" ? "border" : "border-2"}`}>
                 {checked && <div className="w-[40%] h-[40%] bg-white rounded-full shadow-inner opacity-80" />}
             </div>
         </button>
     );
 };
 
-// Bloco de Atributo Redesenhado
 const AttributeBlock = React.memo(({ config, data, update }: { config: any, data: CharacterSheetData, update: any }) => {
     if (!data?.stats) return null;
-
     const attrKey = config.key as keyof CharacterSheetData['stats'];
     const score = data.stats[attrKey] ?? 10;
     const mod = MOD(score);
     const profBonus = data.proficiencyBonus || 2;
-    
     const isSaveProf = data.savingThrows?.[attrKey] || false;
     const saveVal = mod + (isSaveProf ? profBonus : 0);
 
     return (
         <div className="bg-iron-900/60 border border-slate-800/80 rounded-xl overflow-hidden flex flex-col h-full group transition-all hover:border-slate-700/80 hover:shadow-lg hover:shadow-black/20">
-            {/* Header Moderno */}
             <div className="relative p-3 pb-2 flex items-center justify-between bg-gradient-to-b from-iron-800/40 to-transparent">
                 <div className="flex flex-col z-10">
                     <span className={`text-[10px] uppercase font-bold tracking-[0.2em] mb-1 ${config.theme.text} opacity-80`}>{config.label}</span>
@@ -209,40 +171,22 @@ const AttributeBlock = React.memo(({ config, data, update }: { config: any, data
                         title="Valor Base"
                     />
                 </div>
-                
                 <div className="flex items-center justify-center relative w-12 h-12">
-                    <div className={`absolute inset-0 opacity-10 rounded-full blur-xl ${config.theme.bg}`} />
+                    <div className="absolute inset-0 opacity-10 rounded-full blur-xl bg-white" />
                     <span className={`text-4xl font-display font-bold ${config.theme.text} drop-shadow-sm`}>
                         {mod >= 0 ? `+${mod}` : mod}
                     </span>
                 </div>
             </div>
-
-            {/* Content Body */}
             <div className="px-3 pb-3 space-y-3 flex-1">
-                {/* Saving Throw Row - Destaque */}
-                <div className={`
-                    flex items-center justify-between rounded-lg px-3 py-2 border transition-all duration-300
-                    ${isSaveProf ? `bg-${config.key === 'cha' || config.key === 'str' ? 'white' : 'black'}/5 ${config.theme.border} border-opacity-30` : 'bg-iron-950/30 border-slate-800/50'}
-                `}>
+                <div className={`flex items-center justify-between rounded-lg px-3 py-2 border transition-all duration-300 ${isSaveProf ? `bg-${config.key === 'cha' || config.key === 'str' ? 'white' : 'black'}/5 ${config.theme.border} border-opacity-30` : 'bg-iron-950/30 border-slate-800/50'}`}>
                     <div className="flex items-center gap-3">
-                        <DiamondToggle 
-                            checked={isSaveProf} 
-                            onChange={(c) => update(`savingThrows.${attrKey}`, c)} 
-                            theme={config.theme}
-                            size="md"
-                        />
+                        <DiamondToggle checked={isSaveProf} onChange={(c) => update(`savingThrows.${attrKey}`, c)} theme={config.theme} size="md" />
                         <span className={`text-xs font-bold uppercase tracking-wider ${isSaveProf ? 'text-slate-200' : 'text-slate-500'}`}>Salvaguarda</span>
                     </div>
-                    <span className={`text-sm font-bold font-mono ${isSaveProf ? config.theme.text : 'text-slate-600'}`}>
-                        {saveVal >= 0 ? `+${saveVal}` : saveVal}
-                    </span>
+                    <span className={`text-sm font-bold font-mono ${isSaveProf ? config.theme.text : 'text-slate-600'}`}>{saveVal >= 0 ? `+${saveVal}` : saveVal}</span>
                 </div>
-
-                {/* Skills Divider */}
                 {Object.keys(config.skills).length > 0 && <div className="h-px bg-slate-800/50 w-full" />}
-
-                {/* Skills List */}
                 <div className="space-y-1">
                     {Object.entries(config.skills).map(([skillKey, skillLabel]) => {
                         // @ts-ignore
@@ -252,20 +196,11 @@ const AttributeBlock = React.memo(({ config, data, update }: { config: any, data
                             <div key={skillKey} className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-white/5 transition-colors group/skill cursor-pointer" onClick={() => update(`skills.${skillKey}`, !isProf)}>
                                 <div className="flex items-center gap-3">
                                     <div onClick={(e) => e.stopPropagation()}>
-                                        <DiamondToggle 
-                                            checked={isProf} 
-                                            onChange={(c) => update(`skills.${skillKey}`, c)} 
-                                            theme={config.theme}
-                                            size="sm"
-                                        />
+                                        <DiamondToggle checked={isProf} onChange={(c) => update(`skills.${skillKey}`, c)} theme={config.theme} size="sm" />
                                     </div>
-                                    <span className={`text-xs transition-colors ${isProf ? 'text-slate-200 font-medium' : 'text-slate-500 group-hover/skill:text-slate-400'}`}>
-                                        {skillLabel as string}
-                                    </span>
+                                    <span className={`text-xs transition-colors ${isProf ? 'text-slate-200 font-medium' : 'text-slate-500 group-hover/skill:text-slate-400'}`}>{skillLabel as string}</span>
                                 </div>
-                                <span className={`text-xs font-mono transition-colors ${isProf ? `${config.theme.text} font-bold` : 'text-slate-600'}`}>
-                                    {skillVal >= 0 ? `+${skillVal}` : skillVal}
-                                </span>
+                                <span className={`text-xs font-mono transition-colors ${isProf ? `${config.theme.text} font-bold` : 'text-slate-600'}`}>{skillVal >= 0 ? `+${skillVal}` : skillVal}</span>
                             </div>
                         )
                     })}
@@ -275,37 +210,21 @@ const AttributeBlock = React.memo(({ config, data, update }: { config: any, data
     );
 });
 
-// --- COMPONENTE PRINCIPAL ---
-
 const CharacterSheet: React.FC = () => {
   const [data, setData] = useState<CharacterSheetData>(DEFAULT_DATA);
   const [isSaved, setIsSaved] = useState(false);
   const [showSpells, setShowSpells] = useState(false);
+  const [showImporter, setShowImporter] = useState(false);
   const [newItemType, setNewItemType] = useState<ItemType>('weapon');
+  const [viewingSpell, setViewingSpell] = useState<Spell | null>(null);
 
-  // Load Logic
   useEffect(() => {
     const saved = localStorage.getItem('shadow_mechanism_sheet_v2');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') {
-            setData(prev => ({
-                ...prev,
-                ...parsed,
-                stats: { ...prev.stats, ...(parsed.stats || {}) },
-                savingThrows: { ...prev.savingThrows, ...(parsed.savingThrows || {}) },
-                skills: { ...prev.skills, ...(parsed.skills || {}) },
-                combat: { ...prev.combat, ...(parsed.combat || {}) },
-                info: { ...prev.info, ...(parsed.info || {}) },
-                inventory: Array.isArray(parsed.inventory) ? parsed.inventory : prev.inventory,
-                magic: { 
-                    ...prev.magic, 
-                    ...(parsed.magic || {}), 
-                    slots: parsed.magic?.slots || prev.magic.slots,
-                    spells: Array.isArray(parsed.magic?.spells) ? parsed.magic.spells : prev.magic.spells 
-                },
-            }));
+            setData(prev => ({ ...prev, ...parsed }));
         }
       } catch (e) { console.error(e); }
     }
@@ -362,7 +281,6 @@ const CharacterSheet: React.FC = () => {
 
       const effectiveDex = Math.min(dexMod, armorDexCap);
       const totalAC = armorAC + effectiveDex + shieldBonus + (data.combat.manualACModifier || 0);
-
       const strMod = MOD(data.stats.str);
       const intMod = MOD(data.stats.int);
 
@@ -382,7 +300,6 @@ const CharacterSheet: React.FC = () => {
                 if (dmg.includes('d8')) dmg = dmg.replace('d8', 'd10');
                 else if (dmg.includes('d6')) dmg = dmg.replace('d6', 'd8');
             }
-
             const dmgBonus = usedMod;
             return {
                 id: wpn.id,
@@ -427,6 +344,35 @@ const CharacterSheet: React.FC = () => {
       update('inventory', items);
   };
 
+  const handleImportedData = (imported: any, type: 'item' | 'spell') => {
+      if (type === 'item') {
+          update('inventory', [...(data.inventory || []), imported]);
+      } else if (type === 'spell') {
+          const level = imported.level || 0;
+          const spells = JSON.parse(JSON.stringify(data.magic.spells));
+          if (!spells[level]) spells[level] = [];
+          
+          // Mapeia os dados detalhados do wikidot para o objeto Spell
+          const newSpell: Spell = {
+              id: Math.random().toString(36).substring(2, 9),
+              name: imported.name,
+              prepared: false,
+              level: level,
+              school: imported.school,
+              // Verifica se tem fullData (vindo do parser HTML/Gemini)
+              castingTime: imported.fullData?.castingTime,
+              range: imported.fullData?.range,
+              components: imported.fullData?.components,
+              duration: imported.fullData?.duration,
+              description: imported.fullData?.description,
+          };
+          
+          spells[level].push(newSpell);
+          update('magic.spells', spells);
+          setShowSpells(true);
+      }
+  };
+
   if (!data || !data.stats) {
       return (
           <div className="pt-32 pb-20 flex flex-col items-center justify-center text-slate-400">
@@ -436,10 +382,72 @@ const CharacterSheet: React.FC = () => {
       );
   }
 
+  const detectedClass = data.info.classLevel ? data.info.classLevel.split(' ')[0] : 'Artificer';
+
   return (
     <div className="pt-24 pb-20 container mx-auto max-w-[90rem] px-2 md:px-6 font-sans text-slate-300">
       
-      {/* HEADER */}
+      {showImporter && (
+          <WikidotImporter 
+            onImport={handleImportedData}
+            onClose={() => setShowImporter(false)}
+            characterClass={detectedClass}
+          />
+      )}
+
+      {/* --- SPELL DETAIL MODAL (Reused UI) --- */}
+      {viewingSpell && (
+          <div className="fixed inset-0 z-[100] bg-iron-950/95 backdrop-blur-sm p-4 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-200">
+             <div className="bg-iron-900 border border-slate-700 rounded-xl max-w-3xl w-full shadow-2xl flex flex-col max-h-[90vh]">
+                 {/* Card Header */}
+                 <div className="p-4 bg-slate-900 border-b border-slate-800 flex justify-between items-start shrink-0 rounded-t-xl">
+                     <div>
+                         <h2 className="text-2xl font-display text-slate-100">{viewingSpell.name}</h2>
+                         <div className="text-xs text-purple-400 font-bold uppercase tracking-widest flex items-center gap-2 mt-1">
+                             <Scroll className="w-3 h-3" />
+                             {viewingSpell.school || "Escola Desconhecida"} • {viewingSpell.level > 0 ? `Level ${viewingSpell.level}` : 'Cantrip'}
+                         </div>
+                     </div>
+                     <button onClick={() => setViewingSpell(null)} className="p-1 hover:bg-white/10 rounded text-slate-400 hover:text-white transition-colors">
+                         <X className="w-6 h-6" />
+                     </button>
+                 </div>
+
+                 {/* Stats Grid */}
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-slate-800 border-b border-slate-800 shrink-0">
+                     {[
+                         { label: 'Tempo', val: viewingSpell.castingTime || "-" },
+                         { label: 'Alcance', val: viewingSpell.range || "-" },
+                         { label: 'Comp.', val: viewingSpell.components || "-" },
+                         { label: 'Duração', val: viewingSpell.duration || "-" }
+                     ].map((stat, i) => (
+                         <div key={i} className="bg-iron-900 p-2 text-center">
+                             <div className="text-[10px] text-slate-500 uppercase font-bold">{stat.label}</div>
+                             <div className="text-xs text-slate-200 font-mono truncate" title={stat.val}>{stat.val}</div>
+                         </div>
+                     ))}
+                 </div>
+
+                 {/* Description */}
+                 <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-iron-950/30">
+                     <div className="prose prose-invert prose-sm max-w-none font-serif text-slate-300 leading-relaxed whitespace-pre-wrap">
+                         {viewingSpell.description || "Nenhuma descrição disponível para esta magia."}
+                     </div>
+                 </div>
+
+                 {/* Footer Actions */}
+                 <div className="p-4 border-t border-slate-800 bg-iron-950 shrink-0 rounded-b-xl">
+                     <button 
+                         onClick={() => setViewingSpell(null)}
+                         className="w-full py-3 bg-iron-800 hover:bg-iron-700 text-slate-300 font-bold rounded-lg border border-slate-700 transition-colors"
+                     >
+                         Fechar
+                     </button>
+                 </div>
+             </div>
+          </div>
+      )}
+
       <div className="flex flex-col md:flex-row justify-between items-end mb-6 border-b border-slate-800 pb-4 gap-4">
         <div className="flex-1 w-full">
             <div className="flex items-baseline gap-3 mb-1">
@@ -468,8 +476,8 @@ const CharacterSheet: React.FC = () => {
         </div>
       </div>
 
-      {/* VITALS HUD */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
+         {/* ... Stats UI ... */}
          <div className="col-span-2 bg-iron-900/50 border border-slate-800 rounded-xl p-4 flex items-center gap-4 relative overflow-hidden">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-600" />
             <div className="bg-iron-950 p-3 rounded-full border border-red-900/30">
@@ -522,9 +530,9 @@ const CharacterSheet: React.FC = () => {
          </div>
       </div>
 
+      {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* ATRIBUTOS & PERÍCIAS (LAYOUT 2024 ESTILIZADO) */}
+          {/* Attributes and Proficiencies */}
           <div className="lg:col-span-7 xl:col-span-8">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {ABILITY_CONFIG.map(config => (
@@ -536,7 +544,6 @@ const CharacterSheet: React.FC = () => {
                       />
                   ))}
               </div>
-              
               <div className="mt-6 bg-iron-900/30 border border-slate-800 rounded-xl p-4">
                   <h3 className="flex items-center gap-2 font-display text-slate-300 text-sm mb-2">
                       <Dna className="w-4 h-4 text-copper-500" /> Proficiências & Idiomas
@@ -549,9 +556,8 @@ const CharacterSheet: React.FC = () => {
               </div>
           </div>
 
-          {/* COLUNA LATERAL */}
+          {/* Right Column: Inventory, Spells */}
           <div className="lg:col-span-5 xl:col-span-4 space-y-6">
-              {/* ATAQUES */}
               <div className="bg-iron-900/30 border border-slate-800/60 rounded-xl p-5">
                    <h3 className="flex items-center gap-2 font-display text-slate-200 mb-4 pb-2 border-b border-slate-800">
                       <Swords className="w-4 h-4 text-copper-500" /> Ações
@@ -578,7 +584,6 @@ const CharacterSheet: React.FC = () => {
                    </div>
               </div>
 
-              {/* INVENTÁRIO */}
               <div className="bg-iron-900/30 border border-slate-800/60 rounded-xl p-5">
                    <div className="flex justify-between items-center mb-4">
                        <h3 className="flex items-center gap-2 font-display text-slate-200">
@@ -622,7 +627,6 @@ const CharacterSheet: React.FC = () => {
                                    </div>
                                    <button onClick={() => handleDeleteItem(item.id)} className="text-slate-700 hover:text-red-500"><Trash2 className="w-3 h-3"/></button>
                                </div>
-                               {/* Detalhes Compactos */}
                                {(item.type === 'weapon' || item.type === 'armor' || item.type === 'shield') && (
                                    <div className="pl-6 flex gap-2 text-[10px] text-slate-500">
                                        {item.type === 'weapon' && (
@@ -645,7 +649,6 @@ const CharacterSheet: React.FC = () => {
                    </div>
               </div>
 
-              {/* MAGIAS */}
               <div className="bg-iron-900/30 border border-slate-800/60 rounded-xl overflow-hidden">
                    <button onClick={() => setShowSpells(!showSpells)} className="w-full flex items-center justify-between p-4 bg-iron-950/50 hover:bg-iron-900 transition-colors">
                        <div className="flex items-center gap-2 font-display text-slate-200">
@@ -653,13 +656,25 @@ const CharacterSheet: React.FC = () => {
                        </div>
                        {showSpells ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
                    </button>
+                   
                    {showSpells && (
                        <div className="p-4 border-t border-slate-800">
-                           <div className="flex justify-between text-center mb-4 text-xs">
+                           {/* Spell Stats Summary */}
+                           <div className="flex justify-between text-center mb-6 text-xs bg-iron-950/50 p-2 rounded">
                                <div><div className="text-slate-500 font-bold">ATQ</div><div className="text-slate-200">{data.magic.attackBonus}</div></div>
                                <div><div className="text-slate-500 font-bold">CD</div><div className="text-slate-200">{data.magic.saveDC}</div></div>
                                <div><div className="text-slate-500 font-bold">HAB</div><div className="text-copper-400">{data.magic.ability}</div></div>
                            </div>
+
+                           {/* Import Button */}
+                           <button 
+                                onClick={() => setShowImporter(true)} 
+                                className="w-full mb-6 py-3 bg-purple-900/30 text-purple-300 border border-purple-800 hover:bg-purple-800/50 rounded flex items-center justify-center gap-2 font-bold transition-all hover:shadow-lg hover:shadow-purple-900/20"
+                           >
+                                <Globe className="w-4 h-4" /> Adicionar Magia (Wikidot)
+                           </button>
+
+                           {/* Spells List */}
                            <div className="space-y-4">
                                {data.magic.slots.map((slot, lvl) => (
                                    <div key={lvl} className="bg-iron-950/30 rounded border border-slate-800/50 p-2">
@@ -673,15 +688,57 @@ const CharacterSheet: React.FC = () => {
                                                 </div>
                                             )}
                                         </div>
+                                        
                                         <div className="space-y-1">
-                                            {data.magic.spells[lvl]?.map((spell, i) => (
-                                                <div key={i} className="flex items-center gap-2 text-xs group">
-                                                    <DiamondToggle checked={spell.prepared} onChange={(c) => {const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl][i].prepared=c; update('magic.spells', s)}} theme={{bg:'bg-purple-500', border:'border-purple-500'}} size="sm" />
-                                                    <input value={spell.name} onChange={(e) => {const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl][i].name=e.target.value; update('magic.spells', s)}} className={`bg-transparent w-full focus:outline-none ${spell.prepared ? 'text-slate-200' : 'text-slate-500'}`} placeholder="Magia..." />
-                                                    <button onClick={() => {const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl].splice(i,1); update('magic.spells', s)}} className="opacity-0 group-hover:opacity-100 text-slate-700 hover:text-red-500"><Trash2 className="w-3 h-3"/></button>
-                                                </div>
-                                            ))}
-                                            <button onClick={() => {const s=JSON.parse(JSON.stringify(data.magic.spells)); if(!s[lvl]) s[lvl]=[]; s[lvl].push({name:"", prepared:false}); update('magic.spells', s)}} className="text-[9px] text-slate-600 hover:text-purple-400">+ Add</button>
+                                            {data.magic.spells[lvl]?.map((spell, i) => {
+                                                return (
+                                                    <div key={i} className="hover:bg-white/5 rounded transition-all duration-300 border border-transparent hover:border-slate-800">
+                                                        {/* Row */}
+                                                        <div className="flex items-center gap-2 p-1.5 cursor-pointer" onClick={() => setViewingSpell(spell)}>
+                                                            <div onClick={(e) => e.stopPropagation()}>
+                                                                <DiamondToggle 
+                                                                    checked={spell.prepared} 
+                                                                    onChange={(c) => {const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl][i].prepared=c; update('magic.spells', s)}} 
+                                                                    theme={{bg:'bg-purple-500', border:'border-purple-500'}} 
+                                                                    size="sm" 
+                                                                />
+                                                            </div>
+                                                            <div className="flex-1 flex items-center justify-between">
+                                                                <input 
+                                                                    value={spell.name} 
+                                                                    onChange={(e) => {const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl][i].name=e.target.value; update('magic.spells', s)}} 
+                                                                    className={`bg-transparent w-full text-xs focus:outline-none cursor-pointer ${spell.prepared ? 'text-slate-200 font-medium' : 'text-slate-500'}`} 
+                                                                    placeholder="Magia..." 
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                />
+                                                                <div className="flex items-center gap-2">
+                                                                    {spell.school && <span className="text-[9px] text-slate-600 uppercase">{spell.school.substring(0,3)}</span>}
+                                                                    <BookOpen className="w-3 h-3 text-slate-600 hover:text-purple-400" />
+                                                                </div>
+                                                            </div>
+                                                            <button 
+                                                                onClick={(e) => {e.stopPropagation(); const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl].splice(i,1); update('magic.spells', s)}} 
+                                                                className="opacity-20 hover:opacity-100 text-slate-700 hover:text-red-500"
+                                                            >
+                                                                <Trash2 className="w-3 h-3"/>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                            
+                                            {/* Quick Add Manual Button */}
+                                            <button 
+                                                onClick={() => {
+                                                    const s=JSON.parse(JSON.stringify(data.magic.spells)); 
+                                                    if(!s[lvl]) s[lvl]=[]; 
+                                                    s[lvl].push({id: Math.random().toString(36), name:"", prepared:false, level: lvl}); 
+                                                    update('magic.spells', s)
+                                                }} 
+                                                className="text-[10px] text-slate-600 hover:text-purple-400 flex items-center gap-1 mt-2 pl-2"
+                                            >
+                                                <Plus className="w-3 h-3" /> Manual
+                                            </button>
                                         </div>
                                    </div>
                                ))}

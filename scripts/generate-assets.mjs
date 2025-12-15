@@ -45,7 +45,7 @@ const STORY_DATA = [
   },
   {
     id: "epilogue",
-    imagePrompt: `dwarf forge interior, ${CHAR_LOGAN} (human with short stature 1.41m) putting on custom splint armor made of vertical metal strips and leather, holding a heavy warhammer with glowing blue copper tubes (pneumatic) using the exoskeleton armor to lift it, expression is calm and emotionless, serene determination, lean and wiry body frame in armor, gritty realistic fantasy style, volumetric lighting`
+    imagePrompt: ` a big bicicle in the backgroun of a dwarf forge interior, ${CHAR_LOGAN} (human with short stature 1.41m) putting on a custom made splint armor made of vertical metal strips and leather, holding warhammer with glowing blue copper tubes (pneumatic), expression is calm and emotionless, serene determination, lean and wiry body frame in armor, gritty realistic fantasy style, volumetric lighting`
   }
 ];
 
