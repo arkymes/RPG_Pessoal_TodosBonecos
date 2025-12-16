@@ -13,7 +13,7 @@ import { Buffer } from 'buffer';
 
 // --- CONFIGURAÇÃO DA HISTÓRIA ---
 // Personagens padronizados para consistência
-const CHAR_LOGAN = "Logan Rylan (young human male, 18 years old, height 1.41m, short stature but strictly human proportions, not a dwarf, not a gnome, lean and wiry athletic build, messy black hair, fair skin, stoic and emotionless face)";
+const CHAR_LOGAN = "Logan Rylan (young human male, 18 years old, height 1.41m, short stature but strictly human proportions, not a dwarf, not a gnome, lean and wiry athletic build, messy black hair, fair skin, stoic and emotionless face, wearing industrial scale mail made of scrap metal washers and gears)";
 const CHAR_GARETH = "Gareth Aldren (young human male student, 19 years old, fresh youthful face, tall, blonde hair, charming smile, wearing expensive magical academy student uniform - not old robes)";
 const CHAR_KOGGLE = "Koggle (gnome tinkerer, multi-lens goggles, oil-stained leather apron)";
 const CHAR_KING = "King Felipe (adult half-elf male, sharp noble features, vibrant red hair, groomed red beard, royal regalia, regal posture)";
@@ -45,15 +45,15 @@ const STORY_DATA = [
   },
   {
     id: "epilogue",
-    imagePrompt: ` a big bicicle in the backgroun of a dwarf forge interior, ${CHAR_LOGAN} (human with short stature 1.41m) putting on a custom made splint armor made of vertical metal strips and leather, holding warhammer with glowing blue copper tubes (pneumatic), expression is calm and emotionless, serene determination, lean and wiry body frame in armor, gritty realistic fantasy style, volumetric lighting`
+    imagePrompt: ` a big bicicle in the backgroun of a dwarf forge interior, ${CHAR_LOGAN} (human with short stature 1.41m) putting on a custom industrial SCALE MAIL armor made of thousands of washers and gear scraps resemblng scales, holding warhammer with glowing blue copper tubes (pneumatic), expression is calm and emotionless, serene determination, lean and wiry body frame in armor, gritty realistic fantasy style, volumetric lighting`
   }
 ];
 
 // Prompt específico para a capa do site (Hero)
 const HERO_PROMPT = "Dark fantasy industrial city background, magical energy lines in sky, steampunk factories, atmospheric, cinematic, wide shot, masterpiece, 8k, forgotten realms, epic scale";
 
-// Prompt específico para o Retrato do Personagem (Grimório) - Agora atualizado com a armadura
-const LOGAN_PROMPT = `Full body character concept of ${CHAR_LOGAN}, wearing custom splint armor (vertical metal strips over leather) with exposed hydraulic pistons and gears. Holding a heavy pneumatic warhammer with glowing blue copper tubes. Stoic, serene, emotionless expression. Steampunk D&D 5e art style, masterpiece. Isolated on pure white background.`;
+// Prompt específico para o Retrato do Personagem (Grimório) - Agora atualizado com a Scale Mail
+const LOGAN_PROMPT = `Full body character concept of ${CHAR_LOGAN}, wearing custom industrial SCALE MAIL armor (thousands of metal washers and scrap metal pieces riveted onto leather like scales) with exposed hydraulic pistons. Holding a heavy pneumatic warhammer with glowing blue copper tubes. Stoic, serene, emotionless expression. Steampunk D&D 5e art style, masterpiece. Isolated on pure white background.`;
 
 // --- CONFIGURAÇÃO DO AMBIENTE ---
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

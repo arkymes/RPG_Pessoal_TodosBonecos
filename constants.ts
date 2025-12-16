@@ -1,24 +1,24 @@
 import { Chapter } from './types';
 
 // Descrições reutilizáveis para garantir consistência
-// LOGAN: Adicionado "ROUND HUMAN EARS" e reforçado "NOT A DWARF" para combater o viés da IA no epílogo
-const CHAR_LOGAN = "Logan Rylan (young human male, 18 years old, height 1.41m, short stature but strictly human proportions, round human ears, no beard, delicate human facial features, not a dwarf, not a gnome, lean and wiry, messy black hair, fair skin, stoic and emotionless face)";
+// LOGAN BASE: Apenas características físicas. O equipamento muda conforme a história.
+export const CHAR_LOGAN = "Logan Rylan (young human male, 18 years old, height 1.41m, short stature but strictly human proportions, round human ears, no beard, delicate human facial features, not a dwarf, not a gnome, lean and wiry, messy black hair, fair skin, stoic and emotionless face)";
 
 // GARETH: Enfatizando "19 years old student" para remover o aspecto de "velho milionário"
-const CHAR_GARETH = "Gareth Aldren (young human male student, 19 years old, fresh youthful face, tall, blonde hair, charming smile, wearing expensive magical academy student uniform - not old robes)";
+export const CHAR_GARETH = "Gareth Aldren (young human male student, 19 years old, fresh youthful face, tall, blonde hair, charming smile, wearing expensive magical academy student uniform - not old robes)";
 
-const CHAR_KOGGLE = "Koggle (gnome tinkerer, multi-lens goggles, oil-stained leather apron)";
+export const CHAR_KOGGLE = "Koggle (gnome tinkerer, multi-lens goggles, oil-stained leather apron)";
 
 // REI FELIPE: Nova constante para o Rei
-const CHAR_KING = "King Felipe (adult half-elf male, sharp noble features, vibrant red hair, groomed red beard, royal regalia, regal posture)";
+export const CHAR_KING = "King Felipe (adult half-elf male, sharp noble features, vibrant red hair, groomed red beard, royal regalia, regal posture)";
 
 export const STORY_DATA: Chapter[] = [
   {
     id: "chapter-1",
     number: "Capítulo 1",
     title: "A Engrenagem Sobressalente",
-    // HIGH ANGLE: Mostra a mesa bagunçada de cima, enfatizando a escala
-    imagePrompt: `High angle top-down view of a messy steampunk workbench, ${CHAR_LOGAN} working on intricate small gears with tweezers, ${CHAR_KOGGLE} watching from the side, workshop cluttered with brass pipes and steam, depth of field focused on Logan's hands, cinematic lighting, detailed atmosphere`,
+    // HIGH ANGLE: Logan com roupas de trabalho simples
+    imagePrompt: `High angle top-down view of a messy steampunk workbench, ${CHAR_LOGAN} wearing simple workman apron and shirt, working on intricate small gears with tweezers, ${CHAR_KOGGLE} watching from the side, workshop cluttered with brass pipes and steam, depth of field focused on Logan's hands, cinematic lighting, detailed atmosphere`,
     content: `Para Logan Rylan, o mundo sempre pareceu uma máquina emperrada — atrito onde deveria haver encaixe perfeito.
 
 A mansão dos Rylan, nos subúrbios fumacentos de Esmeltaran, não era casa. Era fábrica disfarçada de nobreza. O ar fedia a óleo queimado misturado com fuligem grossa — aquele tipo de cheiro que gruda na pele e não sai nem com sabão. Até no "Refeitório dos Menores" — nome pomposo para o cantinho esquecido onde os filhos "extras" comiam — o cheiro grudava nas paredes.
@@ -55,14 +55,14 @@ Logan embarcou no navio mercante *Dama de Ferro* rumo ao norte. Levou suas ferra
     number: "Capítulo 2",
     title: "A Cidade das Linhas de Prata",
     // LOW ANGLE: Mantido o ângulo bom, mas forçando humanos na multidão
-    imagePrompt: `Low angle shot looking up from street level, majestic futuristic fantasy city with glowing scaffolds, crowd of ordinary HUMANS with round ears (no elves) waiting in line, ${CHAR_LOGAN} walking through the crowd looking up in awe, towering white stone architecture, cinematic scale, volumetric lighting`,
+    imagePrompt: `Low angle shot looking up from street level, majestic futuristic fantasy city with glowing scaffolds, crowd of ordinary HUMANS with round ears (no elves) waiting in line, ${CHAR_LOGAN} wearing simple traveler clothes and backpack walking through the crowd looking up in awe, towering white stone architecture, cinematic scale, volumetric lighting`,
     content: `Albion atingiu Logan como um soco nos sentidos. Sua terra natal era ouro velho, política empoeirada e gente que parava de se mexer. Albion era cicatriz aberta, tijolo sobre entulho e uma esperança tão feroz que quase dava para tocar.
 
 A capital, *Online*, subia no horizonte como se desafiasse o céu a derrubá-la de novo. Logan conhecia as histórias — "5 Quilômetros", a tirania do Imperador Palpatine, a época em que magia era crime e virava combustível de guerra. Mas a cidade que ele encontrou ao desembarcar não parecia fantasma de nada. Pulsava. Vibrava. Os elfos a chamavam de *Aon-Lae'in* — A Convergência das Linhas de Prata. Logan achava que parecia mais "A Cidade que Recusou Morrer".
 
 As ruas eram uma bagunça fascinante. Arquitetura humana antiga — blocos de pedra cinza, fortificações militares, prédios quadrados e pragmáticos — entrelaçada com construções élficas modernas de reconstrução. Torres de pedra branca que cresciam em espirais orgânicas, andaimes mágicos flutuando feito teias de aranha luminosas, autômatos simples varrendo calçadas com vassourinhas patéticas.
 
-Logan mal havia atravessado as primeiras ruas quando percebeu que algo estava acontecendo. Multidões. Não as barulhentas — as silenciosas, que são piores. Filas quilométricas de gente serpentinham pelas ruas, todas apontando para o mesmo distrito. O ar estava pesado de reverência. Ou medo. Às vezes é difícil diferenciar.
+Logan mal havia atravessado as primeiras ruas quando percebeu que algo estava acontecendo. Multidões. Não as barulhentas — as silenciosas, que são piores. Filas quilométricas de gente serpentinham pelas ruas, todas apontando para o mesmo distrito. O ar fedia a reverência. Ou medo. Às vezes é difícil diferenciar.
 
 Logan encostou numa parede fria, ajeitou a mochila e observou. Engenheiro observa, sempre. Cada pessoa na fila carregava algo — um símbolo, um medalhão, uma tatuagem visível do punho cerrado de Helm. Fiéis. Milhares deles. Eles caminhavam em direção ao *Templo da Manopla*, no distrito oeste.
 
@@ -87,7 +87,7 @@ Caos organizado. Contradição viva. Albion era tudo que Logan não era. Imprevi
     number: "Capítulo 3",
     title: "A Rotina na Corte das Corujas",
     // OVER THE SHOULDER: Perspectiva do Logan olhando para o Gareth
-    imagePrompt: `Over the shoulder shot from behind ${CHAR_LOGAN} (in foreground, slightly out of focus), looking up at ${CHAR_GARETH} who is holding a glowing magical device triumphantly in a laboratory, showing the height difference and Gareth's charisma, magical sparks in the air, detailed background`,
+    imagePrompt: `Over the shoulder shot from behind ${CHAR_LOGAN} (in foreground, slightly out of focus) wearing student robes, looking up at ${CHAR_GARETH} who is holding a glowing magical device triumphantly in a laboratory, showing the height difference and Gareth's charisma, magical sparks in the air, detailed background`,
     content: `A Corte das Corujas não rolou tapete vermelho para Logan Rylan. Não tinha trombetas, nem cerimônia de boas-vindas. Ele entrou pelos fundos, segurando uma vassoura e vestindo um avental que cheirava a mofo.
 
 A prestigiada academia de magia e engenharia de Albion tinha portões dourados na frente — para gente com sobrenome e dinheiro. Logan tinha uma mochila surrada e o equivalente a três semanas de aluguel no bolso. O trabalho disponível? Zelador assistente da Ala de Artifícios. Não era glamouroso. Era sobrevivência.
@@ -130,7 +130,7 @@ Logan acreditou. A vida na Corte era intensa. Ele devorava cada aula, cada livro
     number: "Capítulo 4",
     title: "O Sussurro de Shadowmoor",
     // DUTCH ANGLE: Câmera torta para dar aflição/terror
-    imagePrompt: `Dutch angle tilted camera shot, horror atmosphere, close up on a ominous black grimoire on a pedestal with pulsating veins, ${CHAR_LOGAN} reaching out to touch it with trembling hand, liquid shadows dripping, unnerving composition, dark forest background`,
+    imagePrompt: `Dutch angle tilted camera shot, horror atmosphere, close up on a ominous black grimoire on a pedestal with pulsating veins, ${CHAR_LOGAN} wearing field expedition tunic reaching out to touch it with trembling hand, liquid shadows dripping, unnerving composition, dark forest background`,
     content: `Segundo ano. Expedição de campo obrigatória. A *Orla do Crepúsculo* — uma faixa de terra onde a realidade era fina como papel molhado e a magia selvagem vazava de planos que ninguém deveria visitar.
 
 A floresta era errada. As árvores tinham cascas cinzentas, textura de pele morta esticada sobre ossos podres. O silêncio era absoluto, quebrado só pelo estalar de galhos secos que ninguém pisava. Logan mantinha os olhos na bússola de mana, ignorando o frio que subia pela espinha.
@@ -196,7 +196,7 @@ Não era o cão. Era o escudo. Um dispositivo portátil, com cristais rotacionan
 
 — Logan. — A voz de Gareth, suave. Ele segurava uma garrafa de vinho caro. — Você é um gênio, cara. Isso vai mudar tudo. Um brinde. Ao nosso futuro.
 
-Logan hesitou. Tinha aquela sensação de parafuso solto. Mas Gareth sorria, aquele sorriso exausto.
+Logan hesitou. Tinha uma sensação de parafuso solto. Mas Gareth sorria, aquele sorriso exausto.
 — Ao nosso futuro — Logan repetiu, aceitando a taça.
 
 O vinho era suave. Sabor rico, levemente adocicado. Amêndoas?
@@ -254,11 +254,11 @@ Ele voltaria.`
     id: "epilogue",
     number: "Epílogo",
     title: "O Primeiro Passo",
-    // HERO SHOT: De baixo para cima, fazendo ele parecer imponente
-    imagePrompt: `Low angle hero shot from the ground looking up at ${CHAR_LOGAN} (human, 1.41m) wearing custom splint armor, holding pneumatic warhammer against shoulder, standing tall inside a forge, dramatic rim lighting, sense of determination and new beginning, masterpiece`,
+    // HERO SHOT: De baixo para cima, fazendo ele parecer imponente. Scale Mail atualizada. AQUI SIM colocamos o equipamento.
+    imagePrompt: `Low angle hero shot from the ground looking up at ${CHAR_LOGAN} (human, 1.41m) wearing custom industrial SCALE MAIL made of scrap metal washers and gears over leather, wearing brass goggles on forehead, tool pouches on belt, holding pneumatic smithing hammer against shoulder, standing tall inside a forge, dramatic rim lighting, sense of determination and new beginning, masterpiece`,
     content: `Seis meses depois.
 
-A Forja Grímsdottir cheirava a carvão e ferro. Logan martelava a última dobradiça de uma placa de ombro.
+A Forja Grímsdottir cheirava a carvão e ferro. Logan martelava a última arruela de uma ombreira reforçada.
 — Vai mesmo fazer isso, garoto? Sair caçando monstros? — Hilda Grímsdottir, a anã, bufou.
 — Vou.
 — Idiota. Mas seu pagamento tá pronto. Quatro peças de ouro. E pode levar aquele martelo velho.
@@ -267,11 +267,11 @@ Logan assentiu. Nas noites, ele construíra o que precisava com sobras.
 
 Agora, sozinho fora dos muros de Online, ele checava o equipamento.
 
-*A armadura:* Splint armor customizada. Feia, mas funcional. Tiras de metal rebitadas em couro, com articulações extras redistribuindo o peso para seu corpo franzino.
+*A armadura:* **Cota de Escamas (Scale Mail)** customizada. Feia, mas genial. Logan não tinha placas grandes de metal, então usou o que encontrou no lixo industrial: centenas de arruelas achatadas, pedaços de engrenagens quebradas e retalhos de aço cortados em forma de escama. Tudo meticulosamente rebitado sobre um casaco de couro pesado de monstro. Parecia a pele de um dragão mecânico. Pesada, barulhenta, mas flexível onde precisava ser.
 
-*O martelo de guerra:* Reconstruído do zero. Cabeça de aço com um sistema de *tubos de cobre* entalados ao longo do cabo. Quando ele canaliza magia, a energia percorre os tubos como sangue em veias, brilhando em azul-pálido e guiando o impacto com precisão matemática, compensando sua falta de força.
+*O Martelo de Forja:* Não era uma arma de guerra. Era sua ferramenta. Cabeça de aço temperado, mas o cabo... o cabo era uma obra de arte improvisada. Tubos de cobre percorriam a madeira, conectados a um pequeno cilindro pneumático na base. Quando Logan sussurrava as palavras antigas que aprendeu observando druidas urbanos — *Shillelagh* —, não era a natureza que respondia, mas a física. As runas brilhavam, o sistema pressurizava, e o martelo vibrava, tornando-se leve como uma pluma em sua mão, mas batendo com o peso de uma bigorna. Ele não precisava de músculos. Precisava de cálculo.
 
-*O tridente:* Arma secundária. Também modificado com canaletas e cristais de foco. Brilha em verde quando ativo, oferecendo alcance perfurante.
+*Ferramentas:* Cintos cruzados sobre o peito carregavam bolsas de couro pesado. Chaves de boca, alicates, gazuas para trancas teimosas, formões para madeira. Na testa, óculos de proteção (goggles) com lentes intercambiáveis de latão.
 
 *O escudo:* Aço simples, ganchos internos para ferramentas. Confiável.
 
@@ -281,7 +281,7 @@ E a maldição. Sempre a maldição. O zumbido na orelha. A sombra que se estica
 
 Meta: 500 peças de ouro. Faltavam 496.
 
-Logan ajustou as tiras da armadura. O sistema pneumático do martelo chiou levemente.
+Logan ajustou as fivelas da cota de escamas. O metal raspou contra metal. Ele baixou os óculos sobre os olhos por um segundo, testando o ajuste, e depois os subiu novamente para a testa.
 
 Estava na hora.`
   }

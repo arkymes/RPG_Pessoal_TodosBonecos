@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Chapter } from '../types';
-import { Settings, Sparkles, ImageOff, Loader2 } from 'lucide-react';
+import { Settings, Sparkles, ImageOff, Loader2, Wand2 } from 'lucide-react';
 import { useCampaign } from '../context/CampaignContext';
 import { GoogleGenAI } from "@google/genai";
 
@@ -29,7 +29,12 @@ const ChapterView: React.FC<ChapterViewProps> = ({ chapter, index }) => {
       // @ts-ignore
       const apiKey = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : null;
 
-      if (!apiKey || isGenerating) return;
+      if (!apiKey) {
+          alert("API Key não encontrada no ambiente.");
+          return;
+      }
+      
+      if (isGenerating) return;
 
       setIsGenerating(true);
       
@@ -51,6 +56,7 @@ const ChapterView: React.FC<ChapterViewProps> = ({ chapter, index }) => {
           }
       } catch (e: any) {
           console.error(`Erro ao gerar cap ${chapter.id}:`, e);
+          alert(`Erro ao gerar imagem: ${e.message}`);
       } finally {
           setIsGenerating(false);
       }
@@ -144,6 +150,16 @@ const ChapterView: React.FC<ChapterViewProps> = ({ chapter, index }) => {
                         <span className="font-display text-copper-400 text-sm tracking-widest uppercase animate-pulse">Materializando Visão...</span>
                     </div>
                 )}
+
+                {/* Manual Generate Button */}
+                <button
+                    onClick={(e) => { e.stopPropagation(); generateImage(); }}
+                    disabled={isGenerating}
+                    className="absolute top-4 right-4 p-3 bg-iron-950/80 text-copper-500 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-copper-600 hover:text-white border border-slate-700 disabled:opacity-50 z-30 shadow-lg backdrop-blur-sm hover:scale-110"
+                    title="Regenerar Imagem com IA"
+                >
+                    {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
+                </button>
 
                 {/* Overlay gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-iron-950 via-transparent to-transparent opacity-60 pointer-events-none" />
