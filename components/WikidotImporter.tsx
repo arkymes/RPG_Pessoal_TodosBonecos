@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Loader2, Download, X, Brain, ChevronRight, Filter, ChevronDown, ChevronUp, Clock, Move, Hourglass, Edit2, Sparkles, Scroll, Shield, Shirt, Box, Layers, Swords, Wrench, MousePointerClick, Star, Award, ListChecks, CheckSquare, Square } from 'lucide-react';
+import { Search, Loader2, Download, X, Brain, ChevronRight, Filter, ChevronDown, ChevronUp, Clock, Move, Hourglass, Edit2, Sparkles, Scroll, Shield, Shirt, Box, Layers, Swords, Wrench, MousePointerClick, Star, Award, ListChecks, CheckSquare, Square, Info } from 'lucide-react';
 
 interface WikidotImporterProps {
   onImport: (data: any, type: 'item' | 'spell' | 'proficiency' | 'feat' | 'class' | 'batch-spells') => void;
@@ -59,7 +59,7 @@ const EQUIP_TABS = [
     { id: 'armor', label: 'Armaduras', icon: Shirt, url: 'http://dnd2024.wikidot.com/equipment:armor' },
     { id: 'weapons', label: 'Armas', icon: Swords, url: 'http://dnd2024.wikidot.com/equipment:weapon' },
     { id: 'gear', label: 'Aventura', icon: Box, url: 'http://dnd2024.wikidot.com/equipment:adventuring-gear' },
-    { id: 'tools', label: 'Ferramentas', icon: Wrench, url: 'http://dnd2024.wikidot.com/equipment:tools' },
+    { id: 'tools', label: 'Ferramentas', icon: Wrench, url: 'http://dnd2024.wikidot.com/equipment:tool' },
 ];
 
 const FEAT_TABS = [
@@ -70,8 +70,15 @@ const FEAT_TABS = [
     { id: 'wiki-tab-0-4', label: 'Dragonmark Feats' },
 ];
 
+const normalizeText = (text: string) => {
+    return text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+};
+
+const cleanCategoryName = (text: string) => {
+    return text.replace(/\(.*\)/, '').trim();
+};
+
 const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, characterClass, mode }) => {
-  // --- SPELLS / DETAILS STATE ---
   const [detailData, setDetailData] = useState<any>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   
@@ -86,27 +93,21 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
       if (lower.includes('sorcer') || lower.includes('feiti')) return 'sorcerer';
       if (lower.includes('warlock') || lower.includes('bruxo')) return 'warlock';
       if (lower.includes('wizard') || lower.includes('mago')) return 'wizard';
-      return 'artificer'; // default
+      return 'artificer'; 
   };
   const [currentClassSlug, setCurrentClassSlug] = useState(getWikidotClassSlug(characterClass));
   const [isEditingClass, setIsEditingClass] = useState(false);
   const [spellsByLevel, setSpellsByLevel] = useState<Record<number, SpellSummary[]>>({});
   const [expandedLevels, setExpandedLevels] = useState<Record<number, boolean>>({ 0: true, 1: true });
   const [isFetchingList, setIsFetchingList] = useState(false);
-  
-  // Class Spells Batch Selection State
   const [selectedSpells, setSelectedSpells] = useState<Set<string>>(new Set());
 
-  // --- EQUIPMENT / FEATS / CLASSES STATE ---
   const [activeEquipTab, setActiveEquipTab] = useState(mode === 'tools-list' ? 'tools' : (mode === 'weapons-list' ? 'weapons' : 'armor'));
   const [equipmentList, setEquipmentList] = useState<EquipmentItem[]>([]);
   const [classesList, setClassesList] = useState<ClassSummary[]>([]);
   const [isFetchingEquip, setIsFetchingEquip] = useState(false);
-
-  // Common Filter
   const [listFilter, setListFilter] = useState('');
 
-  // --- HELPER: ROBUST FETCH ---
   const fetchWithFallback = async (targetUrl: string): Promise<string> => {
       const proxies = [
           async () => {
@@ -135,11 +136,9 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
               console.warn("Proxy failed, trying next...", e);
           }
       }
-
-      throw new Error("Failed to fetch data from Wikidot (All proxies failed).");
+      throw new Error("Failed to fetch data from Wikidot.");
   };
 
-  // --- EFFECTS ---
   useEffect(() => {
       setListFilter('');
       if (mode === 'spells') {
@@ -155,14 +154,12 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
       }
   }, [currentClassSlug, mode, activeEquipTab]);
 
-  // --- SPELL / FEAT DETAIL LOGIC ---
   const fetchSpellList = async () => {
       setIsFetchingList(true);
       setSpellsByLevel({});
       try {
           const targetUrl = `http://dnd2024.wikidot.com/${currentClassSlug}:spell-list`;
           const htmlContent = await fetchWithFallback(targetUrl);
-          
           const parser = new DOMParser();
           const doc = parser.parseFromString(htmlContent, 'text/html');
           const levels: Record<number, SpellSummary[]> = {};
@@ -198,14 +195,12 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
       finally { setIsFetchingList(false); }
   };
 
-  // NEW: Fetch robust class spell list including extra columns
   const fetchClassSpellList = async () => {
       setIsFetchingList(true);
       setSpellsByLevel({});
       try {
           const targetUrl = `http://dnd2024.wikidot.com/${currentClassSlug}:spell-list`;
           const htmlContent = await fetchWithFallback(targetUrl);
-          
           const parser = new DOMParser();
           const doc = parser.parseFromString(htmlContent, 'text/html');
           const levels: Record<number, SpellSummary[]> = {};
@@ -216,12 +211,9 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
               if (tabDiv) {
                   const spells: SpellSummary[] = [];
                   const rows = tabDiv.querySelectorAll('tr');
-                  
-                  // Detect column indices dynamically
                   const headerRow = tabDiv.querySelector('tr');
                   const headers = Array.from(headerRow?.querySelectorAll('th') || []).map(th => th.textContent?.trim().toLowerCase());
-                  
-                  const idxName = 0; // Usually first
+                  const idxName = 0; 
                   const idxSchool = headers.findIndex(h => h?.includes('school'));
                   const idxTime = headers.findIndex(h => h?.includes('time'));
                   const idxRange = headers.findIndex(h => h?.includes('range'));
@@ -229,7 +221,7 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                   const idxDur = headers.findIndex(h => h?.includes('duration'));
 
                   (Array.from(rows) as HTMLTableRowElement[]).forEach((row, rowIdx) => {
-                      if (rowIdx === 0) return; // Skip header
+                      if (rowIdx === 0) return; 
                       const cols = row.querySelectorAll('td');
                       if (cols.length >= 4) {
                           const link = cols[idxName].querySelector('a');
@@ -261,7 +253,6 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
           const cleanSlug = partialUrl.replace(/^\//, '');
           const targetUrl = `http://dnd2024.wikidot.com/${cleanSlug}`;
           const htmlContent = await fetchWithFallback(targetUrl);
-
           const parser = new DOMParser();
           const doc = parser.parseFromString(htmlContent, 'text/html');
           const pageContent = doc.getElementById('page-content');
@@ -283,61 +274,83 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
               source: ""
           };
 
-          const paragraphs = Array.from(pageContent.querySelectorAll('p')) as HTMLParagraphElement[];
-          let foundStats = false;
-          paragraphs.forEach((p) => {
-              const text = p.textContent?.trim() || "";
-              const html = p.innerHTML;
-              if (text.startsWith("Source:")) {
-                  spellData.source = text.replace("Source:", "").trim();
+          // --- ROBUST STATS PARSING (from Text Content) ---
+          const fullText = pageContent.innerText || "";
+          
+          // Regex to safely extract stats even if HTML structure varies
+          const timeMatch = fullText.match(/(?:Casting Time|Tempo de Conjuração):\s*([^\n]+)/i);
+          if (timeMatch) spellData.castingTime = timeMatch[1].trim();
+
+          const rangeMatch = fullText.match(/(?:Range|Alcance):\s*([^\n]+)/i);
+          if (rangeMatch) spellData.range = rangeMatch[1].trim();
+
+          const compMatch = fullText.match(/(?:Components|Componentes):\s*([^\n]+)/i);
+          if (compMatch) spellData.components = compMatch[1].trim();
+
+          const durMatch = fullText.match(/(?:Duration|Duração):\s*([^\n]+)/i);
+          if (durMatch) spellData.duration = durMatch[1].trim();
+
+          // Extract Level/School from first few lines
+          const lines = fullText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+          for(let i=0; i<Math.min(lines.length, 5); i++) {
+              const line = lines[i];
+              if (!spellData.school && (line.includes("Level") || line.toLowerCase().includes("cantrip")) && !line.includes(":")) {
+                  spellData.school = line;
+                  if (line.toLowerCase().includes("cantrip")) spellData.level = 0;
+                  else {
+                      const match = line.match(/\d+/);
+                      if (match) spellData.level = parseInt(match[0]);
+                  }
+              }
+              if (line.startsWith("Source:")) {
+                  spellData.source = line.replace("Source:", "").trim();
+              }
+          }
+
+          // --- DESCRIPTION PARSING (Line Filtering) ---
+          // Filter out known stat lines to leave just the description
+          let descriptionBuffer = "";
+          
+          lines.forEach(line => {
+              // Skip Metadata Lines
+              if (line.startsWith("Source:") || 
+                  line.startsWith("Casting Time:") || 
+                  line.startsWith("Range:") || 
+                  line.startsWith("Components:") || 
+                  line.startsWith("Duration:") ||
+                  line === spellData.school ||
+                  line.includes("Spell Lists")) {
                   return;
               }
-              if (mode === 'feats') {
-                  if (!text.startsWith("Source:")) spellData.description += text + "\n\n";
+              
+              if (line.includes("At Higher Levels")) {
+                  descriptionBuffer += "\n\n**At Higher Levels:** ";
                   return;
               }
 
-              if (!foundStats && !spellData.school && (text.toLowerCase().includes("cantrip") || text.toLowerCase().includes("level"))) {
-                  const classMatch = text.match(/\((.*?)\)/);
-                  if (classMatch) spellData.classes = classMatch[1];
-                  const mainInfo = text.replace(/\(.*\)/, '').trim();
-                  if (mainInfo.toLowerCase().includes("cantrip")) {
-                      spellData.level = 0;
-                      spellData.school = mainInfo.replace(/cantrip/i, '').trim();
-                  } else {
-                      const levelMatch = mainInfo.match(/(\d+)/);
-                      spellData.level = levelMatch ? parseInt(levelMatch[0]) : 1;
-                      spellData.school = mainInfo.replace(/(\d+)(st|nd|rd|th)?-level/i, '').trim();
-                  }
-                  return;
-              }
-              if (html.includes("<strong>Casting Time:</strong>") || text.includes("Casting Time:")) {
-                  foundStats = true;
-                  const lines = html.split('<br>');
-                  lines.forEach(line => {
-                      const cleanLine = line.replace(/<[^>]*>/g, '').trim(); 
-                      if (cleanLine.startsWith("Casting Time:")) spellData.castingTime = cleanLine.replace("Casting Time:", "").trim();
-                      if (cleanLine.startsWith("Range:")) spellData.range = cleanLine.replace("Range:", "").trim();
-                      if (cleanLine.startsWith("Components:")) spellData.components = cleanLine.replace("Components:", "").trim();
-                      if (cleanLine.startsWith("Duration:")) spellData.duration = cleanLine.replace("Duration:", "").trim();
-                  });
-                  return;
-              }
-              if (text.startsWith("At Higher Levels")) { spellData.higherLevels = text; return; }
-              if (foundStats) spellData.description += text + "\n\n";
+              // Filter out nav/breadcrumb noise
+              if (line === "Home" || line === "Spell Lists" || line === pageTitle) return;
+
+              descriptionBuffer += line + "\n\n";
           });
-          spellData.description = spellData.description.trim();
-          if (!spellData.description && paragraphs.length > 0) {
-               spellData.description = paragraphs.map(p => p.textContent).join('\n\n');
-          }
-          
+
+          spellData.description = descriptionBuffer.trim();
           setDetailData(spellData);
       } catch (e) {
           setDetailData({ name: "Erro ao carregar", description: "Falha de conexão com a Wiki." });
       } finally { setIsDetailLoading(false); }
   };
 
-  const importSpellFromPopup = () => {
+  const handleToolDetailClick = (item: EquipmentItem) => {
+    setDetailData({
+        name: item.name,
+        description: item.description,
+        isTool: true,
+        source: item.category
+    });
+  };
+
+  const importDetailFromPopup = () => {
       if (!detailData) return;
       
       if (mode === 'feats') {
@@ -346,6 +359,15 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
               source: detailData.source || "Wikidot",
               description: detailData.description
           }, 'feat');
+      } else if (detailData.isTool) {
+          importEquipmentItem({
+              name: detailData.name,
+              cost: "", 
+              weight: "",
+              category: detailData.source,
+              description: detailData.description,
+              sourceType: 'tool'
+          });
       } else {
           onImport({
             name: detailData.name,
@@ -396,7 +418,6 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
       onImport(spellsToImport, 'batch-spells');
   };
 
-  // --- CLASSES LOGIC ---
   const fetchClasses = async () => {
       setIsFetchingEquip(true);
       setClassesList([]);
@@ -440,7 +461,7 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
           const parser = new DOMParser();
           const doc = parser.parseFromString(htmlContent, 'text/html');
           
-          let hitDie = "d8"; // default
+          let hitDie = "d8";
           let saves: string[] = [];
           let armor: string[] = [];
           let weapons: string[] = [];
@@ -452,21 +473,15 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
           const tables = doc.querySelectorAll('table.wiki-content-table');
           
           (Array.from(tables) as HTMLTableElement[]).forEach(table => {
-              // Check Header for Core Traits
               const header = table.querySelector('th');
               if (header && header.textContent?.includes('Core')) {
                   const rows = table.querySelectorAll('tr');
-                  // Cast to Array<HTMLTableRowElement> to fix unknown type in strict TS
                   (Array.from(rows) as HTMLTableRowElement[]).forEach(row => {
                       const cols = row.querySelectorAll('td');
                       if (cols.length >= 2) {
                           const label = cols[0].textContent?.toLowerCase() || "";
                           const val = cols[1].textContent || "";
-                          
-                          if (label.includes('hit point')) {
-                              const match = val.match(/d\d+/i);
-                              if (match) hitDie = match[0];
-                          }
+                          if (label.includes('hit point')) { const match = val.match(/d\d+/i); if (match) hitDie = match[0]; }
                           else if (label.includes('saving throw')) {
                               if (val.includes('Strength')) saves.push('Strength');
                               if (val.includes('Dexterity')) saves.push('Dexterity');
@@ -486,14 +501,11 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                               if (val.toLowerCase().includes('martial')) weapons.push('Marcial');
                           }
                           else if (label.includes('skill')) {
-                              // Parsing: "Choose 2: Arcana, History, ..."
                               const matchCount = val.match(/Choose (\d+)/i);
                               if (matchCount) skillPrompt.count = parseInt(matchCount[1]);
-                              
                               const listPart = val.split(':')[1] || val;
                               const opts = listPart.split(/,| or /).map(s => {
                                   const clean = s.trim().replace('.', '').toLowerCase();
-                                  // Map common names to keys
                                   if(clean.includes('animal')) return 'animalHandling';
                                   if(clean.includes('sleight')) return 'sleightOfHand';
                                   return clean;
@@ -504,88 +516,69 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                   });
               }
 
-              // PARSE "Features Table" - Robust Logic
-              // 1. Identify which column is "Features" or "Class Features"
               const ths = table.querySelectorAll('th');
               let featuresColIndex = -1;
-              
-              // Fix: Use simple loop to avoid forEach on unknown type issues
               for (let i = 0; i < ths.length; i++) {
-                  const thNode = ths[i] as HTMLElement;
-                  const txt = thNode.textContent?.toLowerCase().trim() || "";
-                  if (txt === 'features' || txt === 'class features') {
-                      featuresColIndex = i;
-                  }
+                  const txt = ths[i].textContent?.toLowerCase().trim() || "";
+                  if (txt === 'features' || txt === 'class features') featuresColIndex = i;
               }
-
-              // Only proceed if we found a Features column, or assume column 2 as fallback for specific tables
               if (featuresColIndex === -1 && ths.length > 2 && ths[2].textContent?.includes('Features')) featuresColIndex = 2;
 
               if (featuresColIndex !== -1) {
                   const rows = table.querySelectorAll('tr');
-                  // Fix: Explicitly handle NodeList iteration to avoid 'unknown' type errors
-                  const rowArray = Array.from(rows) as HTMLTableRowElement[];
-                  rowArray.forEach((row) => {
+                  (Array.from(rows) as HTMLTableRowElement[]).forEach((row) => {
                       const cols = row.querySelectorAll('td');
                       if (cols.length > featuresColIndex) {
                           const levelText = cols[0].textContent?.trim();
                           const featuresText = cols[featuresColIndex].textContent?.trim(); 
-                          
                           const level = parseInt(levelText || "0");
-                          // Validate: Level must be a number, Feature must exist and not be a number (avoid "2")
-                          const isFeatureNameValid = featuresText && featuresText !== '-' && isNaN(parseInt(featuresText));
-
-                          if (!isNaN(level) && isFeatureNameValid) {
+                          if (!isNaN(level) && featuresText && featuresText !== '-' && isNaN(parseInt(featuresText))) {
                               const feats = featuresText!.split(',').map(f => f.trim()).filter(f => f && isNaN(parseInt(f)));
-                              if (feats.length > 0) {
-                                  progression[level] = feats;
-                              }
+                              if (feats.length > 0) progression[level] = feats;
                           }
                       }
                   });
               }
           });
 
-          // --- EXTRACT FEATURE DEFINITIONS & MULTICLASS TEXT FROM DOM ---
           const content = doc.getElementById('page-content');
           if (content) {
-              const headers = content.querySelectorAll('h2, h3, h4, h5');
+              const children = Array.from(content.children);
+              let currentHeader = "";
+              let descriptionBuffer = "";
               let capturingMulticlass = false;
 
-              (Array.from(headers) as HTMLElement[]).forEach(header => {
-                  const name = header.textContent?.trim() || "";
-                  
-                  // Multiclass Capture (More Robust)
-                  if (name.toLowerCase().includes('multiclass') && !capturingMulticlass) {
-                      capturingMulticlass = true; // Flag to capture subsequent paragraphs
-                      let next = header.nextElementSibling;
-                      let mcText = "";
-                      // Capture everything until the next major header
-                      while (next && !['H1','H2','H3'].includes(next.tagName)) {
-                          if (next.tagName === 'P' || next.tagName === 'UL') {
-                              mcText += next.textContent + "\n\n";
-                          }
-                          next = next.nextElementSibling;
+              for (let i = 0; i < children.length; i++) {
+                  const node = children[i];
+                  const tagName = node.tagName;
+                  const text = node.textContent?.trim() || "";
+
+                  if (['H2','H3','H4','H5'].includes(tagName) || (tagName === 'P' && node.querySelector('strong') && text.length < 50)) {
+                      
+                      if (currentHeader && descriptionBuffer) {
+                          definitions[normalizeText(currentHeader)] = descriptionBuffer.trim();
+                          definitions[currentHeader] = descriptionBuffer.trim();
                       }
-                      multiclassText = mcText.trim();
-                      return; 
-                  }
 
-                  if (['Spellcasting', 'Subclass'].some(k => name.includes(k))) return; 
-
-                  let desc = "";
-                  let next = header.nextElementSibling;
-                  // Capture definitions
-                  while (next && !['H1','H2','H3','H4','H5','TABLE'].includes(next.tagName)) {
-                      desc += next.textContent + "\n\n";
-                      next = next.nextElementSibling;
+                      if (text.toLowerCase().includes('multiclass') && !text.includes('Feature')) {
+                          capturingMulticlass = true;
+                          currentHeader = "Multiclassing";
+                      } else {
+                          capturingMulticlass = false;
+                          currentHeader = text.replace(/\(.*\)/, '').trim(); 
+                      }
+                      
+                      descriptionBuffer = ""; 
+                  } else {
+                      if (currentHeader && !['TABLE', 'SCRIPT'].includes(tagName)) {
+                          if (capturingMulticlass) multiclassText += text + "\n\n";
+                          else descriptionBuffer += text + "\n\n";
+                      }
                   }
-                  if (name && desc) {
-                      definitions[name] = desc.trim();
-                      // Also store lowercase key for fuzzy matching
-                      definitions[name.toLowerCase()] = desc.trim();
-                  }
-              });
+              }
+              if (currentHeader && descriptionBuffer) {
+                   definitions[normalizeText(currentHeader)] = descriptionBuffer.trim();
+              }
           }
 
           onImport({
@@ -595,7 +588,7 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
               armor: armor,
               weapons: weapons,
               progression: progression,
-              definitions: definitions,
+              definitions: definitions, 
               multiclassText: multiclassText, 
               skillPrompt: skillPrompt 
           }, 'class');
@@ -604,7 +597,6 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
       finally { setIsDetailLoading(false); }
   }
 
-  // --- FEATS LOGIC ---
   const fetchFeats = async () => {
       setIsFetchingEquip(true);
       setEquipmentList([]);
@@ -644,7 +636,6 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
       finally { setIsFetchingEquip(false); }
   }
 
-  // --- EQUIPMENT LOGIC ---
   const fetchEquipment = async (tabId: string) => {
     setIsFetchingEquip(true);
     setEquipmentList([]);
@@ -659,53 +650,118 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
         const content = doc.getElementById('page-content');
         if (!content) return;
 
+        const toolDetailMap: Record<string, string> = {};
+        if (tabId === 'tools') {
+            const tabs = content.querySelectorAll('.yui-navset');
+            tabs.forEach(tabSet => {
+                const navItems = tabSet.querySelectorAll('.yui-nav li');
+                const contentItems = tabSet.querySelectorAll('.yui-content > div');
+                navItems.forEach((li, i) => {
+                    const name = li.textContent?.trim() || "";
+                    const div = contentItems[i] as HTMLElement;
+                    const desc = div?.innerText || div?.textContent || "";
+                    if (name) toolDetailMap[name.toLowerCase()] = desc.trim();
+                });
+            });
+        }
+
         const tables = content.querySelectorAll('table.wiki-content-table');
         const parsedItems: EquipmentItem[] = [];
 
         (Array.from(tables) as HTMLTableElement[]).forEach(table => {
-            // Find category header (H2, H3, etc before table)
+            // ROBUST CATEGORY FINDING (Look up for H1-H6)
+            let category = "Diversos";
             let prev = table.previousElementSibling;
-            while(prev && !['H1','H2','H3','H4','H5','H6'].includes(prev.tagName)) {
+            for(let i=0; i<5; i++) {
+                if(!prev) break;
+                if(['H1','H2','H3','H4','H5','H6'].includes(prev.tagName)) {
+                    category = cleanCategoryName(prev.textContent?.trim() || "Diversos");
+                    break;
+                }
                 prev = prev.previousElementSibling;
             }
-            let category = prev?.textContent?.trim() || "Diversos";
 
-            const rows = table.querySelectorAll('tr');
-            (Array.from(rows) as HTMLTableRowElement[]).forEach((row, idx) => {
-                if (idx === 0) return; // Skip Header
+            // DYNAMIC HEADER DETECTION - Scan up to 5 rows to find the header row
+            const rows = Array.from(table.querySelectorAll('tr'));
+            let headerMap: Record<string, number> = {};
+            let hasDetectedHeaders = false;
+            let headerRowIndex = -1;
+
+            // Find the true header row that contains column names like 'Cost', 'Damage', 'AC', etc.
+            for(let r=0; r<Math.min(rows.length, 5); r++) {
+                const ths = Array.from(rows[r].querySelectorAll('th')).map(t => t.textContent?.trim().toLowerCase() || "");
+                // Check if this row looks like a header row
+                if (ths.some(h => h.includes('cost') || h.includes('damage') || h.includes('weight') || h.includes('armor') || h.includes('mastery'))) {
+                    headerRowIndex = r;
+                    ths.forEach((h, i) => {
+                        if(h.includes('name') || h === 'armor' || h === 'weapon' || h === 'item') headerMap['name'] = i;
+                        if(h.includes('damage')) headerMap['damage'] = i;
+                        if(h.includes('properties')) headerMap['properties'] = i;
+                        if(h.includes('mastery')) headerMap['mastery'] = i;
+                        if(h.includes('weight')) headerMap['weight'] = i;
+                        if(h.includes('cost')) headerMap['cost'] = i;
+                        if(h.includes('armor class') || h === 'ac' || h.includes('armor')) headerMap['ac'] = i;
+                        if(h.includes('strength') || h === 'str') headerMap['strength'] = i;
+                        if(h.includes('stealth')) headerMap['stealth'] = i;
+                    });
+                    hasDetectedHeaders = true;
+                    break;
+                }
+            }
+
+            rows.forEach((row, idx) => {
+                // Skip header row(s)
+                if (hasDetectedHeaders && idx <= headerRowIndex) return;
+                if (idx === 0 && !hasDetectedHeaders) return; // Fallback skip first row if no header found
+
                 const cols = row.querySelectorAll('td');
+                if (cols.length === 0) return; 
+
+                const getVal = (key: string, defIdx: number) => {
+                    const idx = hasDetectedHeaders ? (headerMap[key] ?? defIdx) : defIdx;
+                    return cols[idx]?.textContent?.trim() || "";
+                };
                 
-                if (tabId === 'armor' && cols.length >= 6) {
+                if (tabId === 'armor') {
                     parsedItems.push({
-                        name: cols[0].textContent?.trim() || "Item",
-                        cost: cols[5].textContent?.trim() || "",
-                        ac: cols[1].textContent?.trim() || "",
-                        strength: cols[2].textContent?.trim() || "-",
-                        stealth: cols[3].textContent?.trim() || "-",
-                        weight: cols[4].textContent?.trim() || "",
+                        name: getVal('name', 0),
+                        cost: getVal('cost', 5),
+                        ac: getVal('ac', 1),
+                        strength: getVal('strength', 2),
+                        stealth: getVal('stealth', 3),
+                        weight: getVal('weight', 4),
                         category: category,
                         description: "",
                         sourceType: 'armor'
                     });
                 } else if (tabId === 'weapons') {
-                     // 2024 Wikidot Weapons Table Logic
-                     // Col 0: Name, Col 1: Damage, Col 2: Properties, Col 3: Mastery (New), Col 4: Weight, Col 5: Cost
-                     if (cols.length >= 6) {
-                         const mastery = cols[3].textContent?.trim() || "-";
-                         parsedItems.push({
-                            name: cols[0].textContent?.trim() || "Item",
-                            damage: cols[1].textContent?.trim() || "",
-                            properties: cols[2].textContent?.trim() || "",
-                            mastery: mastery,
-                            weight: cols[4].textContent?.trim() || "",
-                            cost: cols[5].textContent?.trim() || "",
-                            category: category,
-                            description: "",
-                            sourceType: 'weapon'
-                        });
-                     }
-                } else if ((tabId === 'gear' || tabId === 'tools') && cols.length >= 2) {
-                     // Gear/Tools usually: Item | Cost | Weight | Function (Optional)
+                     parsedItems.push({
+                        name: getVal('name', 0),
+                        damage: getVal('damage', 1),
+                        properties: getVal('properties', 2),
+                        mastery: getVal('mastery', 3),
+                        weight: getVal('weight', 4),
+                        cost: getVal('cost', 5),
+                        category: category,
+                        description: "",
+                        sourceType: 'weapon'
+                    });
+                } else if (tabId === 'tools' && cols.length >= 4) {
+                     const name = cols[0].textContent?.trim() || "Item";
+                     const ability = cols[1].textContent?.trim() || "-";
+                     const weight = cols[2]?.textContent?.trim() || "-";
+                     const cost = cols[3]?.textContent?.trim() || "";
+                     const detail = toolDetailMap[name.toLowerCase()] || "";
+                     
+                     parsedItems.push({
+                        name: name,
+                        cost: cost,
+                        weight: weight,
+                        category: category,
+                        description: detail || `Habilidade: ${ability}`,
+                        sourceType: 'tool'
+                    });
+                } else if (tabId === 'gear' && cols.length >= 2) {
                      const weight = cols[2]?.textContent?.trim() || "-";
                      const description = cols[3]?.textContent?.trim() || "";
                      
@@ -715,7 +771,7 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                         weight: weight,
                         category: category,
                         description: description,
-                        sourceType: tabId === 'tools' ? 'tool' : 'gear'
+                        sourceType: 'gear'
                     });
                 }
             });
@@ -726,19 +782,13 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
   };
 
   const importEquipmentItem = (item: EquipmentItem) => {
-      // Special Mode: Just return the name for Proficiency Selection
       if (mode === 'tools-list' || mode === 'weapons-list') {
           onImport({ name: item.name }, 'proficiency');
           return;
       }
 
       if (mode === 'feats') {
-          // If clicked 'Download' directly on Feats list without viewing details
-          // We trigger the detail view logic because a Feat without text is bad UX
-          // Item.cost holds the URL in this hacky implementation
-          if (item.cost) {
-              handleSpellClick(item.cost);
-          }
+          if (item.cost) handleSpellClick(item.cost);
           return;
       }
 
@@ -746,42 +796,44 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
           id: Math.random().toString(36).substr(2, 9),
           name: item.name,
           equipped: false,
-          weight: item.weight // Added weight property assignment
+          weight: item.weight,
+          category: item.category
       };
 
       if (item.sourceType === 'armor') {
-          // Detect Shield vs Armor
           const isShield = item.category.toLowerCase().includes('shield');
           newItem.type = isShield ? 'shield' : 'armor';
-          
-          // Parse AC
           const acMatch = item.ac?.match(/(\d+)/);
           newItem.acBonus = acMatch ? parseInt(acMatch[0]) : 0;
           
-          // Max Dex logic
-          if (item.category.toLowerCase().includes('heavy')) newItem.maxDex = 0;
-          else if (item.category.toLowerCase().includes('medium')) newItem.maxDex = 2;
-          else newItem.maxDex = 99;
+          const cat = item.category.toLowerCase();
+          // Correctly set Max Dex based on category
+          if (cat.includes('heavy') || cat.includes('pesada')) newItem.maxDex = 0;
+          else if (cat.includes('medium') || cat.includes('médio') || cat.includes('media')) newItem.maxDex = 2;
+          else newItem.maxDex = 99; // Light armor / Shields usually no limit
+          
+          // Fallback check AC string for "(max 2)" text
+          if (item.ac?.toLowerCase().includes('max 2')) newItem.maxDex = 2;
 
           newItem.stealthDisadvantage = item.stealth?.toLowerCase().includes('disadvantage');
-          newItem.description = `Categoria: ${item.category}\nCusto: ${item.cost}\nPeso: ${item.weight}\nForça: ${item.strength}`;
-      
+          // Update description with all relevant stats since they are not shown in main card
+          newItem.description = `Categoria: ${item.category}\nCusto: ${item.cost}\nPeso: ${item.weight}\nForça: ${item.strength}\nFurtividade: ${item.stealth}`;
+          
+          // Also set strength req explicit property
+          if (item.strength && item.strength !== '-') newItem.strengthReq = item.strength;
+
       } else if (item.sourceType === 'weapon') {
           newItem.type = 'weapon';
-          // Parse Damage
           newItem.damage = item.damage;
-          // Clean damage type
           const dmgParts = item.damage?.split(' ');
           if (dmgParts && dmgParts.length > 1) {
               newItem.damage = dmgParts[0];
               newItem.damageType = dmgParts.slice(1).join(' ');
           }
-          
           newItem.properties = item.properties?.split(',').map(s => s.trim());
-          newItem.mastery = item.mastery; // Capture Mastery
+          newItem.mastery = item.mastery;
           newItem.isTwoHandedConfig = false; 
-          newItem.description = `Categoria: ${item.category}\nCusto: ${item.cost}\nPeso: ${item.weight}`; 
-      
+          newItem.description = `Categoria: ${item.category}\nCusto: ${item.cost}\nPeso: ${item.weight}\nMaestria: ${item.mastery}\nPropriedades: ${item.properties || "Nenhuma"}`; 
       } else {
           newItem.type = 'misc';
           newItem.quantity = 1;
@@ -791,14 +843,12 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
       onImport(newItem, 'item');
   };
 
-  // Group items by category for rendering
   const groupedItems = equipmentList.reduce((acc, item) => {
       if (!acc[item.category]) acc[item.category] = [];
       acc[item.category].push(item);
       return acc;
   }, {} as Record<string, EquipmentItem[]>);
 
-  // --- RENDER ---
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <div className="bg-iron-900 border border-slate-700 rounded-xl max-w-3xl w-full shadow-2xl flex flex-col max-h-[90vh]">
@@ -863,7 +913,7 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                 </div>
             )}
 
-            {(mode === 'armor') && (
+            {(mode === 'armor' || mode === 'tools-list' || mode === 'weapons-list') && (
                 <div className="flex bg-iron-950 border-b border-slate-800">
                     {EQUIP_TABS.map(tab => {
                         const Icon = tab.icon;
@@ -898,8 +948,8 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                 </div>
             )}
 
-            {/* SPELL / FEAT POPUP DETAIL */}
-            {(isDetailLoading || detailData) && (mode === 'spells' || mode === 'feats') && (
+            {/* POPUP DETAIL (SPELL / FEAT / TOOL) */}
+            {(isDetailLoading || detailData) && (mode === 'spells' || mode === 'feats' || mode === 'tools-list') && (
                 <div className="absolute inset-0 z-[70] bg-iron-950/95 backdrop-blur-sm p-4 flex flex-col animate-in fade-in zoom-in-95 duration-200">
                     {isDetailLoading ? (
                         <div className="flex flex-col items-center justify-center h-full gap-4">
@@ -908,7 +958,6 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                         </div>
                     ) : (
                         <div className="flex flex-col h-full overflow-hidden bg-iron-900 border border-slate-700 rounded-lg shadow-2xl">
-                             {/* Detail Header */}
                              <div className="p-4 bg-slate-900 border-b border-slate-800 flex justify-between items-start shrink-0">
                                 <div>
                                     <h2 className="text-2xl font-display text-slate-100">{detailData.name}</h2>
@@ -918,7 +967,7 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                                             {detailData.school} • {detailData.level > 0 ? `Level ${detailData.level}` : 'Cantrip'}
                                         </div>
                                     )}
-                                    {mode === 'feats' && detailData.source && (
+                                    {(mode === 'feats' || mode === 'tools-list') && detailData.source && (
                                         <div className="text-xs text-copper-400 font-bold uppercase tracking-widest flex items-center gap-2 mt-1">
                                             {detailData.source}
                                         </div>
@@ -926,7 +975,6 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                                 </div>
                                 <button onClick={() => setDetailData(null)}><X className="w-6 h-6 text-slate-400" /></button>
                             </div>
-                            {/* Detail Body */}
                             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-iron-950/30">
                                 {mode === 'spells' && (
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-slate-800 border-b border-slate-800 mb-4">
@@ -937,10 +985,9 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                                 )}
                                 <div className="prose prose-invert prose-sm max-w-none text-slate-300 whitespace-pre-wrap">{detailData.description}</div>
                             </div>
-                            {/* Detail Footer */}
                             <div className="p-4 border-t border-slate-800 bg-iron-950 shrink-0 flex gap-3">
                                 <button onClick={() => setDetailData(null)} className="flex-1 py-3 bg-iron-800 hover:bg-iron-700 text-slate-300 font-bold rounded-lg border border-slate-700">Voltar</button>
-                                <button onClick={importSpellFromPopup} className="flex-[2] py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg flex items-center justify-center gap-2"><Download className="w-4 h-4"/> Adicionar</button>
+                                <button onClick={importDetailFromPopup} className="flex-[2] py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg flex items-center justify-center gap-2"><Download className="w-4 h-4"/> {(mode === 'tools-list') ? "Selecionar" : "Adicionar"}</button>
                             </div>
                         </div>
                     )}
@@ -1049,7 +1096,6 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                                 </div>
                             );
                         })}
-                        {/* BATCH IMPORT ACTION BAR */}
                         <div className="fixed bottom-4 left-4 right-4 z-50 flex justify-center">
                             <div className="bg-iron-900 border border-copper-500/50 rounded-full px-6 py-3 shadow-2xl flex items-center gap-4">
                                 <span className="text-slate-300 text-sm font-bold">{selectedSpells.size} selecionados</span>
@@ -1116,19 +1162,27 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                                                         item.sourceType === 'armor' ? 'bg-blue-900/20 text-blue-400' : 
                                                         item.sourceType === 'weapon' ? 'bg-red-900/20 text-red-400' :
                                                         item.sourceType === 'feat' ? 'bg-orange-900/20 text-orange-400' :
+                                                        item.sourceType === 'tool' ? 'bg-copper-900/20 text-copper-400' :
                                                         'bg-slate-800 text-slate-400'
                                                     }`}>
                                                         {item.sourceType === 'armor' ? <Shield className="w-4 h-4" /> : 
                                                          item.sourceType === 'weapon' ? <Swords className="w-4 h-4" /> : 
                                                          item.sourceType === 'feat' ? <Award className="w-4 h-4" /> :
+                                                         item.sourceType === 'tool' ? <Wrench className="w-4 h-4" /> :
                                                          <Box className="w-4 h-4" />}
                                                     </div>
-                                                    <div>
+                                                    <div className="flex-1 min-w-0">
                                                         <div 
-                                                            className={`font-bold text-slate-200 group-hover:text-copper-400 transition-colors ${mode === 'feats' ? 'cursor-pointer' : ''}`}
-                                                            onClick={() => mode === 'feats' && item.cost && handleSpellClick(item.cost)}
+                                                            className={`font-bold text-slate-200 group-hover:text-copper-400 transition-colors truncate ${(mode === 'feats' || (mode === 'tools-list' && item.sourceType === 'tool')) ? 'cursor-pointer' : ''}`}
+                                                            onClick={() => {
+                                                                if (mode === 'feats' && item.cost) handleSpellClick(item.cost);
+                                                                else if (mode === 'tools-list' && item.sourceType === 'tool') handleToolDetailClick(item);
+                                                            }}
                                                         >
-                                                            {item.name}
+                                                            <span className="flex items-center gap-1.5">
+                                                                {item.name}
+                                                                {(mode === 'tools-list' && item.sourceType === 'tool' && item.description) && <Info className="w-3 h-3 text-slate-600 group-hover:text-copper-500" />}
+                                                            </span>
                                                         </div>
                                                         <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-500 mt-0.5 font-mono uppercase">
                                                             {item.ac && <span className="text-slate-300 font-bold">CA {item.ac}</span>}

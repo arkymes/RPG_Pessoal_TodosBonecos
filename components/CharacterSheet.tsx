@@ -18,8 +18,10 @@ interface Item {
   acBonus?: number;
   maxDex?: number;
   stealthDisadvantage?: boolean;
+  strengthReq?: string; // New field for strength Requirement display
   quantity?: number;
   description?: string;
+  category?: string; // "Simple", "Martial", "Light", "Medium", etc.
   overrideAbility?: string; // 'auto', 'str', 'dex', 'int', 'wis', 'cha', 'con'
 }
 
@@ -117,39 +119,29 @@ interface CharacterSheetData {
   };
 }
 
-const DEFAULT_INVENTORY: Item[] = [
-    { id: 'wpn_1', name: 'Martelo de Forja (Pneumático)', type: 'weapon', equipped: true, weight: '4 lb.', damage: '1d8', damageType: 'Concussão', properties: ['Versátil (1d10)'], overrideAbility: 'int', description: 'Imbuído com Shillelagh. Usa INT para ataque e dano. Runas brilham ao impacto.' },
-    { id: 'arm_1', name: 'Cota de Escamas (Industrial)', type: 'armor', equipped: true, weight: '45 lb.', acBonus: 14, maxDex: 2, stealthDisadvantage: true, description: 'Scale Mail feita de sucata industrial e engrenagens.' },
-    { id: 'misc_1', name: 'Óculos de Artífice (Goggles)', type: 'misc', quantity: 1, weight: '0.5 lb.', equipped: false, description: 'Lentes intercambiáveis de latão.' },
-    { id: 'misc_2', name: 'Ferramentas de Ladrão', type: 'misc', quantity: 1, weight: '1 lb.', equipped: false },
-    { id: 'misc_3', name: 'Ferramentas de Tinkerer', type: 'misc', quantity: 1, weight: '10 lb.', equipped: false },
-    { id: 'misc_4', name: 'Ferramentas de Ferreiro', type: 'misc', quantity: 1, weight: '8 lb.', equipped: false },
-    { id: 'misc_5', name: 'Ferramentas de Carpinteiro', type: 'misc', quantity: 1, weight: '6 lb.', equipped: false },
-];
-
 const DEFAULT_DATA: CharacterSheetData = {
   info: {
-    name: "Logan Rylan",
-    className: "Artificer",
-    classes: [{ name: "Artificer", level: 1 }],
+    name: "Novo Personagem",
+    className: "Aventureiro",
+    classes: [{ name: "Aventureiro", level: 1 }],
     level: 1,
-    background: "Nobre (Exilado)",
-    playerName: "Jogador",
-    race: "Humano",
-    alignment: "N",
+    background: "",
+    playerName: "",
+    race: "",
+    alignment: "",
     xp: "0",
   },
-  stats: { str: 10, dex: 12, con: 14, int: 16, wis: 10, cha: 8 },
+  stats: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
   proficiencyBonus: 2,
   inspiration: false,
-  savingThrows: { con: true, int: true },
-  skills: { arcana: true, investigation: true },
+  savingThrows: {},
+  skills: {},
   skillPrompts: [],
   proficiencies: {
-      armor: ['Leve', 'Média', 'Escudos'],
-      weapons: ['Simples', 'Marcial'],
-      tools: ['Smithing Tools', 'Carpenter Tools', 'Tinker Tools', 'Thieves Tools'],
-      languages: ['Comum', 'Gnomish']
+      armor: [],
+      weapons: [],
+      tools: [],
+      languages: ['Comum']
   },
   feats: [],
   classFeatures: [],
@@ -165,14 +157,14 @@ const DEFAULT_DATA: CharacterSheetData = {
     speed: 9,
     manualACModifier: 0,
   },
-  inventory: DEFAULT_INVENTORY,
-  currency: { cp: "0", sp: "0", ep: "0", gp: "4", pp: "0" },
+  inventory: [],
+  currency: { cp: "0", sp: "0", ep: "0", gp: "0", pp: "0" },
   features: "",
   magic: {
-    class: "Artificer",
+    class: "",
     ability: "INT",
-    saveDC: "13",
-    attackBonus: "+5",
+    saveDC: "8",
+    attackBonus: "+0",
     slots: Array(10).fill({ total: "0", used: "0" }),
     spells: Array(10).fill([]).map(() => [])
   }
@@ -234,6 +226,8 @@ const upgradeDie = (damage: string, properties: string[] = []) => {
     if (damage.includes('d12')) return damage.replace('d12', '2d6'); 
     return damage;
 };
+
+const normalizeKey = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
 
 const DiamondToggle = ({ checked, onChange, theme, size = "md" }: { checked: boolean, onChange: (v: boolean) => void, theme: any, size?: "sm"|"md" }) => {
     return (
@@ -444,7 +438,6 @@ const CharacterSheet: React.FC = () => {
   };
 
   const handleImportedData = (imported: any, type: string) => {
-    // Force cast to any to avoid unknown type issues in specific TS environments
     const dataAny = imported as any;
 
     if (type === 'class') {
@@ -453,7 +446,7 @@ const CharacterSheet: React.FC = () => {
             const newClassEntry = { name: dataAny.name, level: 1 };
             const newClasses = [...data.info.classes, newClassEntry];
             let finalClasses = newClasses;
-            if (data.info.classes.length === 1 && data.info.classes[0].name === "Sem Classe") finalClasses = [newClassEntry];
+            if (data.info.classes.length === 1 && data.info.classes[0].name === "Aventureiro") finalClasses = [newClassEntry];
 
             let hitDie = data.hitDieType;
             if (finalClasses.length === 1) {
@@ -462,13 +455,19 @@ const CharacterSheet: React.FC = () => {
             }
 
             const level1Features = dataAny.progression?.[1] || [];
-            const newFeatures: ClassFeature[] = level1Features.map((fName: string) => ({
-                id: Math.random().toString(36),
-                level: 1,
-                name: fName,
-                description: dataAny.definitions?.[fName] || dataAny.definitions?.[fName.toLowerCase()] || "",
-                sourceClass: dataAny.name
-            }));
+            const newFeatures: ClassFeature[] = level1Features.map((fName: string) => {
+                const defs = dataAny.definitions || {};
+                const normName = normalizeKey(fName);
+                const desc = defs[normName] || defs[fName] || "";
+
+                return {
+                    id: Math.random().toString(36),
+                    level: 1,
+                    name: fName,
+                    description: desc,
+                    sourceClass: dataAny.name
+                };
+            });
             
             const allFeatures = [...data.classFeatures, ...newFeatures];
             const isPrimary = finalClasses.length === 1;
@@ -479,6 +478,12 @@ const CharacterSheet: React.FC = () => {
                     // @ts-ignore
                     newSaves[s.toLowerCase().substring(0,3)] = true;
                 });
+            }
+
+            let newProfs = { ...data.proficiencies };
+            if (isPrimary) {
+                if (dataAny.armor) newProfs.armor = [...new Set([...newProfs.armor, ...dataAny.armor])];
+                if (dataAny.weapons) newProfs.weapons = [...new Set([...newProfs.weapons, ...dataAny.weapons])];
             }
 
             let newSkillPrompts = [...(data.skillPrompts || [])];
@@ -496,6 +501,7 @@ const CharacterSheet: React.FC = () => {
                 classFeatures: allFeatures,
                 hitDieType: hitDie,
                 savingThrows: isPrimary ? newSaves : prev.savingThrows,
+                proficiencies: isPrimary ? newProfs : prev.proficiencies,
                 skillPrompts: newSkillPrompts,
                 classFeatureDefinitions: { ...prev.classFeatureDefinitions, ...dataAny.definitions }
             }));
@@ -505,7 +511,20 @@ const CharacterSheet: React.FC = () => {
             alert("Você já possui níveis nesta classe. Use o botão de 'Level Up' ao lado do nível.");
         }
     } else if (type === 'item') {
-        update('inventory', [...data.inventory, dataAny]);
+        const newItem = {
+            ...dataAny,
+            properties: Array.isArray(dataAny.properties) ? dataAny.properties : (dataAny.properties ? dataAny.properties.split(',').map((s: string) => s.trim()) : [])
+        };
+        // Ensure strength and stealth are parsed correctly from description if not explicit (legacy support)
+        if (dataAny.sourceType === 'armor' && dataAny.description) {
+             const strMatch = dataAny.description.match(/Força: (.*)/);
+             if (strMatch) newItem.strengthReq = strMatch[1];
+             if (dataAny.description.toLowerCase().includes('desvantagem') || dataAny.description.toLowerCase().includes('disadvantage')) {
+                 newItem.stealthDisadvantage = true;
+             }
+        }
+        
+        update('inventory', [...data.inventory, newItem]);
     } else if (type === 'spell') {
         const lvl = dataAny.level;
         const currentLevelSpells = [...(data.magic.spells[lvl] || [])];
@@ -530,25 +549,19 @@ const CharacterSheet: React.FC = () => {
         const allSpells = JSON.parse(JSON.stringify(data.magic.spells) || "[]");
         let addedCount = 0;
         (dataAny as any[]).forEach((spell: any) => {
-             // Fix: Explicitly type check and convert to avoid 'unknown' issues
-             const sName = String((spell as any).name || "Magia");
-             const sLevelRaw = (spell as any).level;
-             const lvlStr = String(sLevelRaw || "0");
-             const lvl = typeof sLevelRaw === 'number' ? sLevelRaw : parseInt(lvlStr, 10);
-             
+             const lvl = typeof spell.level === 'number' ? spell.level : (parseInt(String(spell.level)) || 0);
              if (!allSpells[lvl]) allSpells[lvl] = [];
-             // Ensure comparison uses strings and explicit any casting for safe finding
-             if (!allSpells[lvl].find((s: any) => String(s.name) === sName)) {
+             if (!allSpells[lvl].find((s: any) => String(s.name) === String(spell.name))) {
                  allSpells[lvl].push({
                      id: Math.random().toString(36),
-                     name: sName,
+                     name: String(spell.name || "Magia"),
                      prepared: false,
                      level: lvl,
-                     school: String((spell as any).school || ""),
-                     castingTime: String((spell as any).castingTime || ""),
-                     range: String((spell as any).range || ""),
-                     components: String((spell as any).components || ""),
-                     duration: String((spell as any).duration || ""),
+                     school: String(spell.school || ""),
+                     castingTime: String(spell.castingTime || ""),
+                     range: String(spell.range || ""),
+                     components: String(spell.components || ""),
+                     duration: String(spell.duration || ""),
                      description: ""
                  });
                  addedCount++;
@@ -567,7 +580,7 @@ const CharacterSheet: React.FC = () => {
         update('feats', [...data.feats, newFeat]);
     } else if (type === 'proficiency') {
          const profData = dataAny as { name?: string };
-         const profName: string = String(profData?.name || "");
+         const profName = String(profData?.name || "");
          if (importerMode === 'tools-list') addSpecificProficiency('tools', profName);
          else if (importerMode === 'weapons-list') addSpecificProficiency('weapons', profName);
     }
@@ -685,7 +698,15 @@ const CharacterSheet: React.FC = () => {
             // @ts-ignore
             const statMod = MOD(data.stats[ab]);
             
-            const atkBonus = statMod + profBonus; 
+            const isProficient = data.proficiencies.weapons.some(p => 
+                p.toLowerCase() === w.name.toLowerCase() ||
+                (w.category && w.category.toLowerCase().includes('simple') && p.toLowerCase() === 'simples') ||
+                (w.category && w.category.toLowerCase().includes('martial') && p.toLowerCase() === 'marcial') ||
+                (w.category && w.category.toLowerCase().includes('simple') && p.toLowerCase() === 'simple') ||
+                (w.category && w.category.toLowerCase().includes('martial') && p.toLowerCase() === 'martial')
+            );
+            
+            const atkBonus = statMod + (isProficient ? profBonus : 0);
             const dmgBonus = statMod;
 
             let damageDie = w.damage || "1d4";
@@ -695,7 +716,8 @@ const CharacterSheet: React.FC = () => {
                 name: w.name,
                 type: w.damageType || "Dano",
                 bonus: atkBonus >= 0 ? `+${atkBonus}` : `${atkBonus}`,
-                damage: `${damageDie}${dmgBonus >= 0 ? '+' : ''}${dmgBonus}`
+                damage: `${damageDie}${dmgBonus >= 0 ? '+' : ''}${dmgBonus}`,
+                isProficient
             };
         });
     
@@ -1166,7 +1188,7 @@ const CharacterSheet: React.FC = () => {
                                <div className="flex gap-2 text-right">
                                    <div className="text-center">
                                        <div className="text-[9px] text-slate-600 uppercase font-bold">Atq</div>
-                                       <div className="text-sm font-bold text-copper-400">{atk.bonus}</div>
+                                       <div className={`text-sm font-bold ${atk.isProficient ? 'text-copper-400' : 'text-slate-400'}`}>{atk.bonus}</div>
                                    </div>
                                    <div className="text-center w-16">
                                        <div className="text-[9px] text-slate-600 uppercase font-bold">Dano</div>
@@ -1245,6 +1267,15 @@ const CharacterSheet: React.FC = () => {
                                                    </div>
                                                    <input value={item.damageType || ""} onChange={(e) => {const i=[...data.inventory]; i[idx].damageType=e.target.value; update('inventory', i)}} placeholder="Tipo" className="bg-transparent border-b border-slate-800 text-slate-400 focus:border-slate-600 focus:outline-none flex-1"/>
                                                </div>
+                                               
+                                               {/* Mastery Display */}
+                                               {item.mastery && item.mastery !== '-' && (
+                                                   <div className="flex items-center gap-2 px-2 py-1 bg-purple-900/20 border border-purple-500/30 rounded">
+                                                       <Star className="w-3 h-3 text-purple-400" />
+                                                       <span className="text-xs text-purple-300 font-bold uppercase tracking-wide">Mastery: {item.mastery}</span>
+                                                   </div>
+                                               )}
+
                                                <div className="flex items-center gap-2">
                                                    <input value={item.properties?.join(', ') || ""} onChange={(e) => {const i=[...data.inventory]; i[idx].properties=e.target.value.split(',').map(s=>s.trim()); update('inventory', i)}} placeholder="Propriedades..." className="flex-1 bg-transparent text-[10px] text-slate-500 focus:text-slate-300 focus:outline-none italic"/>
                                                     <div className="relative group/ability">
@@ -1260,8 +1291,39 @@ const CharacterSheet: React.FC = () => {
                                            </div>
                                        )}
                                        {(item.type === 'armor' || item.type === 'shield') && (
-                                           <div className="pl-7 grid grid-cols-3 gap-2">
-                                               <div className="flex flex-col items-center bg-iron-900 border border-slate-700 rounded p-1"><span className="text-[9px] text-slate-500 uppercase">CA</span><input type="number" value={item.acBonus} onChange={(e) => {const i=[...data.inventory]; i[idx].acBonus=parseInt(e.target.value); update('inventory', i)}} className="bg-transparent w-full text-center font-bold text-slate-200 focus:outline-none" /></div>
+                                           <div className="pl-7 grid grid-cols-1 gap-2">
+                                               <div className="flex items-center gap-2 flex-wrap">
+                                                   <div className="px-2 py-1 bg-iron-900 border border-slate-700 rounded flex items-center gap-1.5">
+                                                       <span className="text-[10px] text-slate-500 uppercase font-bold">CA</span>
+                                                       <input 
+                                                            type="number" 
+                                                            value={item.acBonus} 
+                                                            onChange={(e) => {const i=[...data.inventory]; i[idx].acBonus=parseInt(e.target.value); update('inventory', i)}} 
+                                                            className="bg-transparent w-10 text-center font-bold text-slate-200 focus:outline-none text-xs" 
+                                                       />
+                                                   </div>
+                                                   
+                                                   {/* Max Dex Badge */}
+                                                   {(item.maxDex !== undefined && item.maxDex < 10) && (
+                                                       <div className="px-2 py-1 bg-iron-900 border border-slate-700 text-slate-400 text-[10px] rounded flex items-center gap-1 uppercase font-bold" title="Bônus Máximo de Destreza na CA">
+                                                           DES Max: <span className="text-white">+{item.maxDex}</span>
+                                                       </div>
+                                                   )}
+
+                                                   {/* Strength Req Badge */}
+                                                   {item.strengthReq && item.strengthReq !== '-' && item.strengthReq !== '' && (
+                                                       <div className="px-2 py-1 bg-iron-900 border border-slate-700 text-slate-400 text-[10px] rounded flex items-center gap-1 uppercase font-bold">
+                                                           Força: <span className="text-white">{item.strengthReq}</span>
+                                                       </div>
+                                                   )}
+
+                                                   {/* Stealth Disadvantage Badge */}
+                                                   {item.stealthDisadvantage && (
+                                                       <div className="px-2 py-1 bg-red-900/20 border border-red-800 text-red-400 text-[10px] rounded flex items-center gap-1 uppercase font-bold">
+                                                           <AlertTriangle className="w-3 h-3" /> Furtividade
+                                                       </div>
+                                                   )}
+                                               </div>
                                            </div>
                                        )}
                                         {activeTab === 'items' && <div className="pl-7 mt-2"><textarea value={item.description || ""} onChange={(e) => {const i=[...data.inventory]; i[idx].description=e.target.value; update('inventory', i)}} className="w-full bg-transparent text-[10px] text-slate-500 focus:text-slate-300 focus:outline-none resize-none h-12 border-l-2 border-slate-800 pl-2" placeholder="Descrição..." /></div>}

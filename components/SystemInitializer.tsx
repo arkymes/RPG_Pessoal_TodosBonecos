@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { GoogleGenAI } from "@google/genai";
 import { STORY_DATA, HERO_PROMPT, buildJsonPrompt } from '../constants';
 import { Loader2, FolderInput, Terminal, AlertTriangle } from 'lucide-react';
+import { generateContentWithRetry, sleep } from '../utils/gemini';
 
 const SystemInitializer: React.FC = () => {
   const [needsInit, setNeedsInit] = useState(false);
@@ -37,7 +37,6 @@ const SystemInitializer: React.FC = () => {
 
   const generateAndSave = async () => {
     setError(null);
-    // Use process.env.API_KEY directly as per guidelines
     if (!process.env.API_KEY) {
       setError("API_KEY não encontrada.");
       return;
@@ -60,14 +59,10 @@ const SystemInitializer: React.FC = () => {
         throw new Error("Acesso ao diretório cancelado.");
       }
 
-      // Initialize with named parameter using process.env.API_KEY directly as per guidelines
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      
       const tasks = [
         { id: 'hero.png', prompt: HERO_PROMPT },
         ...STORY_DATA.map(c => ({
           id: `${c.id}.png`,
-          // Fix: Removed 'as any' as meta is now properly typed in Chapter interface
           prompt: buildJsonPrompt({
             scene: c.imagePrompt || "",
             camera_angle: c.meta?.camera_angle,
@@ -92,7 +87,14 @@ const SystemInitializer: React.FC = () => {
             } catch (e) { }
 
             addLog(`🎨 Gerando: ${task.id}...`);
-            const response = await ai.models.generateContent({
+            
+            // Add a mandatory delay between generations to respect rate limits
+            if (completed > 0) {
+              addLog(`⏳ Respeitando limites de cota (pausa de 3s)...`);
+              await sleep(3000);
+            }
+
+            const response = await generateContentWithRetry({
                 model: 'gemini-2.5-flash-image',
                 contents: { parts: [{ text: task.prompt }] },
                 config: { imageConfig: { aspectRatio: "16:9" } }
@@ -122,7 +124,8 @@ const SystemInitializer: React.FC = () => {
       }
 
       addLog("✨ Concluído. Recarregando...");
-      setTimeout(() => window.location.reload(), 3000);
+      await sleep(3000);
+      window.location.reload();
     } catch (err: any) {
       console.error(err);
       setError(err.message);
@@ -153,7 +156,7 @@ const SystemInitializer: React.FC = () => {
           )}
           <div className="mt-8 w-full max-w-2xl bg-black/40 rounded border border-white/5 p-4 font-mono text-xs text-left h-48 overflow-y-auto shadow-inner">
              {logs.length === 0 && <span className="text-slate-600 animate-pulse">Aguardando comando...</span>}
-             {logs.map((log, i) => <div key={i} className="mb-1 text-slate-400">{log}</div>)}
+             {logs.map((log, i) => <div key={i} className={`mb-1 ${log.includes('❌') ? 'text-red-400' : 'text-slate-400'}`}>{log}</div>)}
           </div>
         </div>
       </div>

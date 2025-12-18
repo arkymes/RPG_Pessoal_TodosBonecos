@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { GoogleGenAI } from "@google/genai";
 import { Loader2, ImageOff, Wand2 } from 'lucide-react';
 import { useCampaign } from '../context/CampaignContext';
 import { buildJsonPrompt } from '../constants';
+import { generateContentWithRetry } from '../utils/gemini';
 
 interface SmartImageProps {
   id: string; 
@@ -24,24 +24,16 @@ const SmartImage: React.FC<SmartImageProps> = ({ id, src, prompt, fallbackSrc, c
   const handleGenerate = async (e: React.MouseEvent) => {
     e.stopPropagation(); 
     
-    // Fix: Adhere to guidelines using process.env.API_KEY directly
-    if (!process.env.API_KEY) {
-        alert("Erro: API Key não encontrada.");
-        return;
-    }
+    if (isGenerating) return;
 
     setIsGenerating(true);
     try {
-        // Fix: Initialize GoogleGenAI with named parameter directly from environment
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        
-        // Usa o builder estruturado
         const jsonPrompt = buildJsonPrompt({
             scene: prompt,
             aspect_ratio: aspectRatio
         });
 
-        const response = await ai.models.generateContent({
+        const response = await generateContentWithRetry({
             model: 'gemini-2.5-flash-image',
             contents: {
                 parts: [{ text: jsonPrompt }]

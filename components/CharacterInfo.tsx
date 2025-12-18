@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Hammer, ShieldAlert, Skull, Anchor, Pencil, Save, Shield, Wand2, Loader2, ImageOff, Info, Wrench, Sparkles, X, Send, Users, Zap } from 'lucide-react';
 import { useCampaign } from '../context/CampaignContext';
-import { GoogleGenAI } from "@google/genai";
 import { CHAR_LOGAN, buildJsonPrompt } from '../constants';
+import { generateContentWithRetry } from '../utils/gemini';
 
 const CharacterInfo: React.FC = () => {
   const { images, setImage } = useCampaign();
@@ -31,10 +31,9 @@ const CharacterInfo: React.FC = () => {
   const characterImageSrc = images['logan_portrait'] || "/images/logan.png";
 
   const handleGeneratePortrait = async (customDescriptionOverride?: string) => {
-      if (!process.env.API_KEY) { alert("API Key ausente."); return; }
+      if (isGenerating) return;
       setIsGenerating(true);
       try {
-          const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
           const descriptionToUse = customDescriptionOverride || charData.appearance;
           const jsonPrompt = buildJsonPrompt({
               scene: `Official character concept art portrait of ${CHAR_LOGAN}. Cinematic fantasy atmosphere. He is wearing: ${descriptionToUse}. Human proportions, 17 years old, NO beard, thin frame. High detail, sharp focus, masterpiece.`,
@@ -43,11 +42,13 @@ const CharacterInfo: React.FC = () => {
               composition_rules: ["rule of thirds", "character focus"],
               aspect_ratio: "3:4"
           });
-          const response = await ai.models.generateContent({
+          
+          const response = await generateContentWithRetry({
               model: 'gemini-2.5-flash-image',
               contents: { parts: [{ text: jsonPrompt }] },
               config: { imageConfig: { aspectRatio: "3:4" } }
           });
+
           const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
           if (part && part.inlineData) {
               const base64 = `data:image/png;base64,${part.inlineData.data}`;
@@ -62,11 +63,9 @@ const CharacterInfo: React.FC = () => {
   };
 
   const handleMagicUpdate = async () => {
-      if (!magicPrompt.trim()) return;
-      if (!process.env.API_KEY) { alert("API Key ausente."); return; }
+      if (!magicPrompt.trim() || isMagicLoading) return;
       setIsMagicLoading(true);
       try {
-          const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
           const textModel = 'gemini-3-flash-preview';
           const rewritePrompt = `
             Logan Rylan é um jovem de 17 anos, baixo (1.41m) e franzino.
@@ -74,10 +73,12 @@ const CharacterInfo: React.FC = () => {
             Mudança desejada pelo usuário: "${magicPrompt}"
             Tarefa: Reescreva a descrição de aparência baseada na mudança, mantendo Logan baixo, franzino, humano e sem barba. Ele sempre tem ferramentas, escudo e scimitarra. Retorne APENAS o novo texto em português.
           `;
-          const textResponse = await ai.models.generateContent({
+          
+          const textResponse = await generateContentWithRetry({
               model: textModel,
               contents: rewritePrompt
           });
+
           const newDescription = textResponse.text?.trim();
           if (newDescription) {
               setCharData(prev => ({ ...prev, appearance: newDescription }));

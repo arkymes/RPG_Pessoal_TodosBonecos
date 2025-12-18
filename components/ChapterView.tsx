@@ -4,8 +4,8 @@ import { motion } from 'framer-motion';
 import { Chapter } from '../types';
 import { Settings, Sparkles, ImageOff, Loader2, Wand2 } from 'lucide-react';
 import { useCampaign } from '../context/CampaignContext';
-import { GoogleGenAI } from "@google/genai";
 import { buildJsonPrompt } from '../constants';
+import { generateContentWithRetry } from '../utils/gemini';
 
 interface ChapterViewProps {
   chapter: Chapter;
@@ -23,20 +23,10 @@ const ChapterView: React.FC<ChapterViewProps> = ({ chapter, index }) => {
   const staticImage = `/images/${chapter.id}.png`;
   
   const generateImage = async () => {
-      // Fix: Follow guidelines to use process.env.API_KEY directly and check for availability
-      if (!process.env.API_KEY) {
-          alert("API Key não encontrada.");
-          return;
-      }
-      
       if (isGenerating) return;
       setIsGenerating(true);
       
       try {
-          // Fix: Always use named parameter for apiKey directly from environment
-          const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-          
-          // Fix: Remove 'as any' cast as meta is now defined in Chapter interface
           const jsonPrompt = buildJsonPrompt({
               scene: chapter.imagePrompt || "",
               camera_angle: chapter.meta?.camera_angle,
@@ -45,7 +35,7 @@ const ChapterView: React.FC<ChapterViewProps> = ({ chapter, index }) => {
               composition_rules: chapter.meta?.composition_rules
           });
 
-          const response = await ai.models.generateContent({
+          const response = await generateContentWithRetry({
               model: 'gemini-2.5-flash-image',
               contents: {
                   parts: [{ text: jsonPrompt }]
@@ -69,7 +59,7 @@ const ChapterView: React.FC<ChapterViewProps> = ({ chapter, index }) => {
   useEffect(() => {
       if (!dynamicImage && !hasTriedAuto && !isGenerating) {
           setHasTriedAuto(true);
-          const delay = 1000 + (index * 2000);
+          const delay = 1000 + (index * 4000); // Increased delay to avoid burst limits
           const timer = setTimeout(() => {
               if (!images[chapter.id]) {
                   generateImage();
