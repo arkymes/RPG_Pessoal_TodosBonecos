@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Loader2, Download, X, Brain, ChevronRight, Filter, ChevronDown, ChevronUp, Clock, Move, Hourglass, Edit2, Sparkles, Scroll, Shield, Shirt, Box, Layers, Swords, Wrench, MousePointerClick, Star, Award, ListChecks, CheckSquare, Square, Info } from 'lucide-react';
+import { fetchWithFallback, parseSpellPage } from '../utils/wikidot';
 
 interface WikidotImporterProps {
   onImport: (data: any, type: 'item' | 'spell' | 'proficiency' | 'feat' | 'class' | 'batch-spells') => void;
@@ -108,37 +109,6 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
   const [isFetchingEquip, setIsFetchingEquip] = useState(false);
   const [listFilter, setListFilter] = useState('');
 
-  const fetchWithFallback = async (targetUrl: string): Promise<string> => {
-      const proxies = [
-          async () => {
-              const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
-              if (!res.ok) throw new Error('Status ' + res.status);
-              const data = await res.json();
-              return data.contents;
-          },
-          async () => {
-              const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
-              if (!res.ok) throw new Error('Status ' + res.status);
-              return await res.text();
-          },
-          async () => {
-              const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
-              if (!res.ok) throw new Error('Status ' + res.status);
-              return await res.text();
-          }
-      ];
-
-      for (const proxy of proxies) {
-          try {
-              const result = await proxy();
-              if (result && result.length > 100) return result; 
-          } catch (e) {
-              console.warn("Proxy failed, trying next...", e);
-          }
-      }
-      throw new Error("Failed to fetch data from Wikidot.");
-  };
-
   useEffect(() => {
       setListFilter('');
       if (mode === 'spells') {
@@ -154,6 +124,7 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
       }
   }, [currentClassSlug, mode, activeEquipTab]);
 
+  // ... (keep fetchSpellList and fetchClassSpellList as is)
   const fetchSpellList = async () => {
       setIsFetchingList(true);
       setSpellsByLevel({});
@@ -253,91 +224,10 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
           const cleanSlug = partialUrl.replace(/^\//, '');
           const targetUrl = `http://dnd2024.wikidot.com/${cleanSlug}`;
           const htmlContent = await fetchWithFallback(targetUrl);
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(htmlContent, 'text/html');
-          const pageContent = doc.getElementById('page-content');
-          const pageTitle = doc.querySelector('.page-title')?.textContent || cleanSlug;
-          
-          if (!pageContent) throw new Error("Estrutura da página desconhecida.");
-          
-          let spellData = {
-              name: pageTitle,
-              level: 0,
-              school: "",
-              castingTime: "-",
-              range: "-",
-              components: "-",
-              duration: "-",
-              description: "",
-              higherLevels: "",
-              classes: "",
-              source: ""
-          };
-
-          // --- ROBUST STATS PARSING (from Text Content) ---
-          const fullText = pageContent.innerText || "";
-          
-          // Regex to safely extract stats even if HTML structure varies
-          const timeMatch = fullText.match(/(?:Casting Time|Tempo de Conjuração):\s*([^\n]+)/i);
-          if (timeMatch) spellData.castingTime = timeMatch[1].trim();
-
-          const rangeMatch = fullText.match(/(?:Range|Alcance):\s*([^\n]+)/i);
-          if (rangeMatch) spellData.range = rangeMatch[1].trim();
-
-          const compMatch = fullText.match(/(?:Components|Componentes):\s*([^\n]+)/i);
-          if (compMatch) spellData.components = compMatch[1].trim();
-
-          const durMatch = fullText.match(/(?:Duration|Duração):\s*([^\n]+)/i);
-          if (durMatch) spellData.duration = durMatch[1].trim();
-
-          // Extract Level/School from first few lines
-          const lines = fullText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-          for(let i=0; i<Math.min(lines.length, 5); i++) {
-              const line = lines[i];
-              if (!spellData.school && (line.includes("Level") || line.toLowerCase().includes("cantrip")) && !line.includes(":")) {
-                  spellData.school = line;
-                  if (line.toLowerCase().includes("cantrip")) spellData.level = 0;
-                  else {
-                      const match = line.match(/\d+/);
-                      if (match) spellData.level = parseInt(match[0]);
-                  }
-              }
-              if (line.startsWith("Source:")) {
-                  spellData.source = line.replace("Source:", "").trim();
-              }
-          }
-
-          // --- DESCRIPTION PARSING (Line Filtering) ---
-          // Filter out known stat lines to leave just the description
-          let descriptionBuffer = "";
-          
-          lines.forEach(line => {
-              // Skip Metadata Lines
-              if (line.startsWith("Source:") || 
-                  line.startsWith("Casting Time:") || 
-                  line.startsWith("Range:") || 
-                  line.startsWith("Components:") || 
-                  line.startsWith("Duration:") ||
-                  line === spellData.school ||
-                  line.includes("Spell Lists")) {
-                  return;
-              }
-              
-              if (line.includes("At Higher Levels")) {
-                  descriptionBuffer += "\n\n**At Higher Levels:** ";
-                  return;
-              }
-
-              // Filter out nav/breadcrumb noise
-              if (line === "Home" || line === "Spell Lists" || line === pageTitle) return;
-
-              descriptionBuffer += line + "\n\n";
-          });
-
-          spellData.description = descriptionBuffer.trim();
+          const spellData = parseSpellPage(htmlContent, cleanSlug);
           setDetailData(spellData);
       } catch (e) {
-          setDetailData({ name: "Erro ao carregar", description: "Falha de conexão com a Wiki." });
+          setDetailData({ name: "Erro ao carregar", description: "Falha de conexão com a Wiki ou estrutura de página inesperada." });
       } finally { setIsDetailLoading(false); }
   };
 
@@ -452,6 +342,7 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
       finally { setIsFetchingEquip(false); }
   }
 
+  // --- KEY FIX IN HANDLE CLASS CLICK ---
   const handleClassClick = async (classUrl: string, className: string) => {
       setIsDetailLoading(true);
       try {
@@ -556,7 +447,9 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                   if (['H2','H3','H4','H5'].includes(tagName) || (tagName === 'P' && node.querySelector('strong') && text.length < 50)) {
                       
                       if (currentHeader && descriptionBuffer) {
-                          definitions[normalizeText(currentHeader)] = descriptionBuffer.trim();
+                          // Clean "Level X: " prefix to ensure mapping works
+                          const cleanH = currentHeader.replace(/^Level \d+:\s*/i, '').trim();
+                          definitions[normalizeText(cleanH)] = descriptionBuffer.trim();
                           definitions[currentHeader] = descriptionBuffer.trim();
                       }
 
@@ -577,7 +470,8 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                   }
               }
               if (currentHeader && descriptionBuffer) {
-                   definitions[normalizeText(currentHeader)] = descriptionBuffer.trim();
+                   const cleanH = currentHeader.replace(/^Level \d+:\s*/i, '').trim();
+                   definitions[normalizeText(cleanH)] = descriptionBuffer.trim();
               }
           }
 
@@ -852,6 +746,7 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <div className="bg-iron-900 border border-slate-700 rounded-xl max-w-3xl w-full shadow-2xl flex flex-col max-h-[90vh]">
+        {/* ... (rest of the component UI remains similar but uses the imported functions) ... */}
         
         {/* Header */}
         <div className="bg-iron-950/50 rounded-t-xl shrink-0">
@@ -939,7 +834,7 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
 
         {/* Content Area */}
         <div className="p-0 overflow-hidden flex flex-col flex-1 min-h-0 relative">
-
+            
             {/* CLASS LOADING OVERLAY */}
             {isDetailLoading && mode === 'classes' && (
                 <div className="absolute inset-0 z-[70] bg-iron-950/95 backdrop-blur-sm p-4 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-200">
@@ -993,7 +888,9 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
                     )}
                 </div>
             )}
-
+            
+            {/* ... (Existing List Logic for Spells, Classes, Equipment) ... */}
+            
             {/* FILTER BAR */}
             <div className="p-4 border-b border-slate-800 bg-iron-950/30 shrink-0">
                 <div className="relative">
