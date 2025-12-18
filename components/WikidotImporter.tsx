@@ -508,13 +508,15 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
               // 1. Identify which column is "Features" or "Class Features"
               const ths = table.querySelectorAll('th');
               let featuresColIndex = -1;
-              (Array.from(ths) as HTMLElement[]).forEach((thNode, idx) => {
-                  const th = thNode as HTMLElement;
-                  const txt = th.textContent?.toLowerCase().trim() || "";
+              
+              // Fix: Use simple loop to avoid forEach on unknown type issues
+              for (let i = 0; i < ths.length; i++) {
+                  const thNode = ths[i] as HTMLElement;
+                  const txt = thNode.textContent?.toLowerCase().trim() || "";
                   if (txt === 'features' || txt === 'class features') {
-                      featuresColIndex = idx;
+                      featuresColIndex = i;
                   }
-              });
+              }
 
               // Only proceed if we found a Features column, or assume column 2 as fallback for specific tables
               if (featuresColIndex === -1 && ths.length > 2 && ths[2].textContent?.includes('Features')) featuresColIndex = 2;
@@ -522,8 +524,8 @@ const WikidotImporter: React.FC<WikidotImporterProps> = ({ onImport, onClose, ch
               if (featuresColIndex !== -1) {
                   const rows = table.querySelectorAll('tr');
                   // Fix: Explicitly handle NodeList iteration to avoid 'unknown' type errors
-                  Array.from(rows).forEach((rowNode) => {
-                      const row = rowNode as HTMLTableRowElement;
+                  const rowArray = Array.from(rows) as HTMLTableRowElement[];
+                  rowArray.forEach((row) => {
                       const cols = row.querySelectorAll('td');
                       if (cols.length > featuresColIndex) {
                           const levelText = cols[0].textContent?.trim();

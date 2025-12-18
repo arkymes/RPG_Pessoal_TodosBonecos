@@ -1,23 +1,49 @@
+
 import { Chapter } from './types';
 
 // Descrições reutilizáveis para garantir consistência
 // LOGAN BASE: Apenas características físicas. O equipamento muda conforme a história.
-export const CHAR_LOGAN = "Logan Rylan (young human male, 18 years old, height 1.41m, short stature but strictly human proportions, round human ears, no beard, delicate human facial features, not a dwarf, not a gnome, lean and wiry, messy black hair, fair skin, stoic and emotionless face)";
+export const CHAR_LOGAN = "Logan Rylan (young human male, 16 years old, height 1.41m, short stature but strictly human proportions, round human ears, no beard, delicate human facial features, not a dwarf, not a gnome, lean and wiry, messy black hair, fair skin, stoic and emotionless face)";
 
 // GARETH: Enfatizando "19 years old student" para remover o aspecto de "velho milionário"
-export const CHAR_GARETH = "Gareth Aldren (young human male student, 19 years old, fresh youthful face, tall, blonde hair, charming smile, wearing expensive magical academy student uniform - not old robes)";
+export const CHAR_GARETH = "Gareth Aldren (young human male student, 16 years old, fresh youthful face, tall, short blonde hair, charming smile, wearing expensive magical academy student uniform - not old robes)";
 
 export const CHAR_KOGGLE = "Koggle (gnome tinkerer, multi-lens goggles, oil-stained leather apron)";
 
 // REI FELIPE: Nova constante para o Rei
 export const CHAR_KING = "King Felipe (adult half-elf male, sharp noble features, vibrant red hair, groomed red beard, royal regalia, regal posture)";
 
+// Prompt para a imagem de fundo do Hero
+export const HERO_PROMPT = "Dark fantasy industrial city background, magical energy lines in sky, steampunk factories, atmospheric, cinematic, wide shot, masterpiece, 8k, forgotten realms";
+
+/**
+ * Constrói um prompt estruturado para o gerador de imagens.
+ * Transforma metadados de cena em uma string descritiva otimizada para o Gemini 2.5 Flash Image.
+ */
+export const buildJsonPrompt = (params: {
+  scene: string;
+  camera_angle?: string;
+  lighting?: string;
+  depth_of_field?: string;
+  composition_rules?: string[];
+  aspect_ratio?: string;
+}) => {
+  const parts = [params.scene];
+  if (params.camera_angle) parts.push(`Perspective: ${params.camera_angle}`);
+  if (params.lighting) parts.push(`Lighting: ${params.lighting}`);
+  if (params.depth_of_field) parts.push(`Focus: ${params.depth_of_field}`);
+  if (params.composition_rules && params.composition_rules.length > 0) {
+    parts.push(`Composition style: ${params.composition_rules.join(', ')}`);
+  }
+  // Adiciona sufixos de qualidade e estilo consistentes com Forgotten Realms
+  return parts.join('. ') + '. High quality cinematic digital art, oil painting textures, epic atmosphere, Forgotten Realms setting, masterpiece, detailed environment.';
+};
+
 export const STORY_DATA: Chapter[] = [
   {
     id: "chapter-1",
     number: "Capítulo 1",
     title: "A Engrenagem Sobressalente",
-    // HIGH ANGLE: Logan com roupas de trabalho simples
     imagePrompt: `High angle top-down view of a messy steampunk workbench, ${CHAR_LOGAN} wearing simple workman apron and shirt, working on intricate small gears with tweezers, ${CHAR_KOGGLE} watching from the side, workshop cluttered with brass pipes and steam, depth of field focused on Logan's hands, cinematic lighting, detailed atmosphere`,
     content: `Para Logan Rylan, o mundo sempre pareceu uma máquina emperrada — atrito onde deveria haver encaixe perfeito.
 
@@ -46,7 +72,7 @@ Logan não conseguia levantar o martelo de forja principal. Pesava demais. Entã
 
 No calor da fornalha, com o metal cantando ritmadamente sob impactos controlados, ele percebeu algo. Com as ferramentas certas, ele podia criar *qualquer coisa*. Qualquer coisa, menos respeito naquela casa.
 
-Quando Logan completou dezesseis anos, a partida não foi dramática. Não foi fuga na calada da noite, com mochila e corda pela janela. Foi descarte administrativo. Ele solicitou a licença de maioridade. Um escriba da família carimbou o papel sem levantar os olhos. Entregou uma bolsa modesta de moedas — o equivalente a três meses de salário de um operário.
+Quando Logan completou dezesseis anos, a partida não foi dramática. Not foi fuga na calada da noite, com mochila e corda pela janela. Foi descarte administrativo. Ele solicitou a licença de maioridade. Um escriba da família carimbou o papel sem levantar os olhos. Entregou uma bolsa modesta de moedas — o equivalente a três meses de salário de um operário.
 
 Logan embarcou no navio mercante *Dama de Ferro* rumo ao norte. Levou suas ferramentas, as lições de Koggle e nada mais. Ninguém acenou do cais. Ninguém notou quando ele partiu. E, honestamente, Logan não esperava que notassem.`
   },
@@ -54,7 +80,6 @@ Logan embarcou no navio mercante *Dama de Ferro* rumo ao norte. Levou suas ferra
     id: "chapter-2",
     number: "Capítulo 2",
     title: "A Cidade das Linhas de Prata",
-    // LOW ANGLE: Mantido o ângulo bom, mas forçando humanos na multidão
     imagePrompt: `Low angle shot looking up from street level, majestic futuristic fantasy city with glowing scaffolds, crowd of ordinary HUMANS with round ears (no elves) waiting in line, ${CHAR_LOGAN} wearing simple traveler clothes and backpack walking through the crowd looking up in awe, towering white stone architecture, cinematic scale, volumetric lighting`,
     content: `Albion atingiu Logan como um soco nos sentidos. Sua terra natal era ouro velho, política empoeirada e gente que parava de se mexer. Albion era cicatriz aberta, tijolo sobre entulho e uma esperança tão feroz que quase dava para tocar.
 
@@ -72,7 +97,7 @@ O zumbido mágico no ar era quase físico. Logan sentiu na nuca, como eletricida
 
 — Por que tanta gente? — perguntou a um mercador de tecidos ao lado, que torcia as mãos nervosamente.
 
-O homem olhou de lado, baixou a voz. — Dia da Permissão. Todo fiel de Helm precisa pedir permissão ao Sumo Sacerdote pra rezar hoje. É tradição antiga. Um decreto real, mas só pros devotos da Manopla. — Ele engoliu seco. — Eu só quero minha permissão pra orar em paz. Pra pedir proteção.
+O homem olhou de lado, baixou a voz. — Dia da Permissão. Todo fiel de Helm precisa pedir permissão ao Sumo Sacerdote pra rezar hoje. Es tradição antiga. Um decreto real, mas só pros devotos da Manopla. — Ele engoliu seco. — Eu só quero minha permissão pra orar em paz. Pra pedir proteção.
 
 Um velho mais atrás resmungou, rouco: — Ouvi dizer que Varian usa isso pra detectar ameaças. Que cada pedido de permissão alimenta uma barreira mágica ao redor da cidade. Prendendo algo. Uma criatura abissal.
 
@@ -86,7 +111,6 @@ Caos organizado. Contradição viva. Albion era tudo que Logan não era. Imprevi
     id: "chapter-3",
     number: "Capítulo 3",
     title: "A Rotina na Corte das Corujas",
-    // OVER THE SHOULDER: Perspectiva do Logan olhando para o Gareth
     imagePrompt: `Over the shoulder shot from behind ${CHAR_LOGAN} (in foreground, slightly out of focus) wearing student robes, looking up at ${CHAR_GARETH} who is holding a glowing magical device triumphantly in a laboratory, showing the height difference and Gareth's charisma, magical sparks in the air, detailed background`,
     content: `A Corte das Corujas não rolou tapete vermelho para Logan Rylan. Não tinha trombetas, nem cerimônia de boas-vindas. Ele entrou pelos fundos, segurando uma vassoura e vestindo um avental que cheirava a mofo.
 
@@ -129,7 +153,6 @@ Logan acreditou. A vida na Corte era intensa. Ele devorava cada aula, cada livro
     id: "chapter-4",
     number: "Capítulo 4",
     title: "O Sussurro de Shadowmoor",
-    // DUTCH ANGLE: Câmera torta para dar aflição/terror
     imagePrompt: `Dutch angle tilted camera shot, horror atmosphere, close up on a ominous black grimoire on a pedestal with pulsating veins, ${CHAR_LOGAN} wearing field expedition tunic reaching out to touch it with trembling hand, liquid shadows dripping, unnerving composition, dark forest background`,
     content: `Segundo ano. Expedição de campo obrigatória. A *Orla do Crepúsculo* — uma faixa de terra onde a realidade era fina como papel molhado e a magia selvagem vazava de planos que ninguém deveria visitar.
 
@@ -172,7 +195,6 @@ Logan aceitou. Catalogou mentalmente: *Maldição de Shadowmoor. Efeitos: interf
     id: "chapter-5",
     number: "Capítulo 5",
     title: "O Pastor e o Escudo",
-    // EXTREME CLOSE UP: Foco na taça de vinho, o resto desfocado
     imagePrompt: `Extreme close up macro shot of a glass of red wine being held by a hand, focus on the red liquid reflection, background is blurred showing ${CHAR_GARETH} smiling and ${CHAR_LOGAN} in a workshop, atmosphere of subtle betrayal, cinematic bokeh`,
     content: `O Grande Concurso de Inovação Real estava chegando. Cinco mil peças de ouro. Título de Engenheiro Real Júnior. Para Logan, a saída da pobreza. Para Gareth, a salvação de sua família falida — algo que ele escondia desesperadamente.
 
@@ -207,8 +229,7 @@ Escuridão sem sonhos.`
     id: "chapter-6",
     number: "Capítulo 6",
     title: "A Queda e o Exílio",
-    // WIDE SHOT (Plano Aberto): Enfatiza o isolamento do Logan
-    imagePrompt: `Wide shot from the back of a grand royal hall, silhouette of small ${CHAR_LOGAN} in the dark foreground walking away, far away in the bright center stage is ${CHAR_GARETH} presenting a glowing shield to ${CHAR_KING}, sharp contrast between the dark foreground and bright background, visual storytelling of exile`,
+    imagePrompt: `Static cinematic shot, low camera placed slightly behind and to the right of ${CHAR_LOGAN}, shoulder-level perspective. Logan occupies the extreme left third of the frame, mostly in shadow, partially cropped, back turned to the camera. His silhouette is sharp but understated, clothing wrinkled and dark, edges catching minimal rim light.The depth of field is long and clean. In the far background, centered on the stage, ${CHAR_GARETH} stands under intense magical illumination, presenting the glowing Aegis at chest height. The Aegis is the brightest point in the image, perfectly centered on the rule-of-thirds intersection.The Grand Hall architecture creates strong leading lines: floor patterns, banners, and columns converge toward Gareth, visually pulling attention away from Logan. The crowd is implied as blurred shapes, not detailed, forming a visual barrier between foreground and stage.Lighting contrast is extreme: foreground nearly black, background overexposed with warm gold and arcane blue light. No motion, no action — a frozen moment of realization.Mood: quiet humiliation, public triumph versus private ruin. Dark fantasy, painterly realism, controlled color palette, deliberate composition, no dynamic action, no visual clutter`,
     content: `Logan acordou com a cabeça latejando. A luz da manhã entrava cruel. O laboratório estava silencioso.
 
 Silêncio errado.
@@ -254,8 +275,7 @@ Ele voltaria.`
     id: "epilogue",
     number: "Epílogo",
     title: "O Primeiro Passo",
-    // HERO SHOT: De baixo para cima, fazendo ele parecer imponente. Scale Mail atualizada. AQUI SIM colocamos o equipamento.
-    imagePrompt: `Low angle hero shot from the ground looking up at ${CHAR_LOGAN} (human, 1.41m) wearing custom industrial SCALE MAIL made of scrap metal washers and gears over leather, wearing brass goggles on forehead, tool pouches on belt, holding pneumatic smithing hammer against shoulder, standing tall inside a forge, dramatic rim lighting, sense of determination and new beginning, masterpiece`,
+    imagePrompt: `Low angle hero shot from the ground looking up at ${CHAR_LOGAN} (human, 1.41m) wearing custom industrial SCALE MAIL made of scrap metal washers and gears over leather, wearing brass goggles on forehead, tool pouches on belt, holding a small pneumatic smithing hammer against shoulder, standing inside a forge, dramatic rim lighting, sense of determination and new beginning, masterpiece`,
     content: `Seis meses depois.
 
 A Forja Grímsdottir cheirava a carvão e ferro. Logan martelava a última arruela de uma ombreira reforçada.

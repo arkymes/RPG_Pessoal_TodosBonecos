@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { Loader2, ImageOff, Wand2 } from 'lucide-react';
 import { useCampaign } from '../context/CampaignContext';
+import { buildJsonPrompt } from '../constants';
 
 interface SmartImageProps {
   id: string; 
@@ -17,12 +19,12 @@ const SmartImage: React.FC<SmartImageProps> = ({ id, src, prompt, fallbackSrc, c
   const { images, setImage } = useCampaign();
   const [isGenerating, setIsGenerating] = useState(false);
   
-  const dynamicImage = images?.[id]; // Safe access
+  const dynamicImage = images?.[id]; 
   
   const handleGenerate = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering parent click events if any
+    e.stopPropagation(); 
     
-    // @ts-ignore
+    // Fix: Adhere to guidelines using process.env.API_KEY directly
     if (!process.env.API_KEY) {
         alert("Erro: API Key não encontrada.");
         return;
@@ -30,11 +32,19 @@ const SmartImage: React.FC<SmartImageProps> = ({ id, src, prompt, fallbackSrc, c
 
     setIsGenerating(true);
     try {
+        // Fix: Initialize GoogleGenAI with named parameter directly from environment
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        // Usa o builder estruturado
+        const jsonPrompt = buildJsonPrompt({
+            scene: prompt,
+            aspect_ratio: aspectRatio
+        });
+
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: {
-                parts: [{ text: `${prompt}, masterpiece, 8k, highly detailed, cinematic lighting, forgotten realms style, oil painting` }]
+                parts: [{ text: jsonPrompt }]
             },
             config: { imageConfig: { aspectRatio: aspectRatio } }
         });
@@ -68,15 +78,11 @@ const SmartImage: React.FC<SmartImageProps> = ({ id, src, prompt, fallbackSrc, c
           alt={alt || "Image"}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
-
-        {/* Fallback Overlay */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-[.fallback-mode]:opacity-100 transition-opacity bg-iron-900/50">
             <div className="flex flex-col items-center text-slate-400">
                 <ImageOff className="w-8 h-8 mb-2 opacity-50" />
             </div>
         </div>
-
-        {/* Generate Button */}
         <button
             onClick={handleGenerate}
             disabled={isGenerating}

@@ -530,21 +530,25 @@ const CharacterSheet: React.FC = () => {
         const allSpells = JSON.parse(JSON.stringify(data.magic.spells) || "[]");
         let addedCount = 0;
         (dataAny as any[]).forEach((spell: any) => {
-             // Fix: Convert to string explicitly before parseInt to satisfy TypeScript
-             const lvl = typeof spell.level === 'number' ? spell.level : (parseInt(String(spell.level)) || 0);
+             // Fix: Explicitly type check and convert to avoid 'unknown' issues
+             const sName = String((spell as any).name || "Magia");
+             const sLevelRaw = (spell as any).level;
+             const lvlStr = String(sLevelRaw || "0");
+             const lvl = typeof sLevelRaw === 'number' ? sLevelRaw : parseInt(lvlStr, 10);
+             
              if (!allSpells[lvl]) allSpells[lvl] = [];
-             // Ensure comparison uses strings
-             if (!allSpells[lvl].find((s: any) => String(s.name) === String(spell.name))) {
+             // Ensure comparison uses strings and explicit any casting for safe finding
+             if (!allSpells[lvl].find((s: any) => String(s.name) === sName)) {
                  allSpells[lvl].push({
                      id: Math.random().toString(36),
-                     name: String(spell.name || "Magia"),
+                     name: sName,
                      prepared: false,
                      level: lvl,
-                     school: String(spell.school || ""),
-                     castingTime: String(spell.castingTime || ""),
-                     range: String(spell.range || ""),
-                     components: String(spell.components || ""),
-                     duration: String(spell.duration || ""),
+                     school: String((spell as any).school || ""),
+                     castingTime: String((spell as any).castingTime || ""),
+                     range: String((spell as any).range || ""),
+                     components: String((spell as any).components || ""),
+                     duration: String((spell as any).duration || ""),
                      description: ""
                  });
                  addedCount++;
@@ -563,7 +567,7 @@ const CharacterSheet: React.FC = () => {
         update('feats', [...data.feats, newFeat]);
     } else if (type === 'proficiency') {
          const profData = dataAny as { name?: string };
-         const profName = String(profData?.name || "");
+         const profName: string = String(profData?.name || "");
          if (importerMode === 'tools-list') addSpecificProficiency('tools', profName);
          else if (importerMode === 'weapons-list') addSpecificProficiency('weapons', profName);
     }
