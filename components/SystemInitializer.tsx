@@ -25,11 +25,11 @@ const SystemInitializer: React.FC = () => {
         clearTimeout(timeoutId);
         if (!res.ok) {
            setNeedsInit(true);
-           addLog("⚠️ Assets visuais não detectados.");
+           addLog("[AVISO] Assets visuais nao detectados.");
         }
       } catch (e) {
         setNeedsInit(true);
-        addLog("⚠️ Verificação de arquivos falhou ou expirou.");
+        addLog("[AVISO] Verificacao de arquivos falhou ou expirou.");
       }
     };
     checkAssets();
@@ -44,17 +44,17 @@ const SystemInitializer: React.FC = () => {
 
     try {
       setIsGenerating(true);
-      addLog("⚡ Inicializando conexão com Gemini 2.5...");
+      addLog("[...] Inicializando conexao com Gemini 2.5...");
       let dirHandle: any;
       try {
-        addLog("📂 Selecione a pasta 'images' na raiz do seu projeto...");
+        addLog("[...] Selecione a pasta 'images' na raiz do seu projeto...");
          // @ts-ignore
         dirHandle = await window.showDirectoryPicker({
             mode: 'readwrite',
             id: 'project-images',
             startIn: 'desktop'
         });
-        addLog("✅ Diretório vinculado.");
+        addLog("[OK] Diretorio vinculado.");
       } catch (err: any) {
         throw new Error("Acesso ao diretório cancelado.");
       }
@@ -80,17 +80,17 @@ const SystemInitializer: React.FC = () => {
         try {
             try {
                 await dirHandle.getFileHandle(task.id);
-                addLog(`ℹ️ ${task.id} existe. Pulando.`);
+                addLog(`[INFO] ${task.id} existe. Pulando.`);
                 completed++;
                 setProgress(Math.round((completed / totalTasks) * 100));
                 continue;
             } catch (e) { }
 
-            addLog(`🎨 Gerando: ${task.id}...`);
+            addLog(`[...] Gerando: ${task.id}...`);
             
             // Add a mandatory delay between generations to respect rate limits
             if (completed > 0) {
-              addLog(`⏳ Respeitando limites de cota (pausa de 3s)...`);
+              addLog(`[AGUARDE] Respeitando limites de cota (pausa de 3s)...`);
               await sleep(3000);
             }
 
@@ -112,18 +112,18 @@ const SystemInitializer: React.FC = () => {
                 const writable = await fileHandle.createWritable();
                 await writable.write(blob);
                 await writable.close();
-                addLog(`✅ Salvo: ${task.id}`);
+                addLog(`[OK] Salvo: ${task.id}`);
             } else {
                 throw new Error("Sem imagem na resposta.");
             }
         } catch (taskErr: any) {
-            addLog(`❌ Erro em ${task.id}: ${taskErr.message}`);
+            addLog(`[ERRO] Erro em ${task.id}: ${taskErr.message}`);
         }
         completed++;
         setProgress(Math.round((completed / totalTasks) * 100));
       }
 
-      addLog("✨ Concluído. Recarregando...");
+      addLog("[CONCLUIDO] Recarregando...");
       await sleep(3000);
       window.location.reload();
     } catch (err: any) {
@@ -156,7 +156,7 @@ const SystemInitializer: React.FC = () => {
           )}
           <div className="mt-8 w-full max-w-2xl bg-black/40 rounded border border-white/5 p-4 font-mono text-xs text-left h-48 overflow-y-auto shadow-inner">
              {logs.length === 0 && <span className="text-slate-600 animate-pulse">Aguardando comando...</span>}
-             {logs.map((log, i) => <div key={i} className={`mb-1 ${log.includes('❌') ? 'text-red-400' : 'text-slate-400'}`}>{log}</div>)}
+             {logs.map((log, i) => <div key={i} className={`mb-1 ${log.includes('[ERRO]') ? 'text-red-400' : log.includes('[OK]') || log.includes('[CONCLUIDO]') ? 'text-green-400' : 'text-slate-400'}`}>{log}</div>)}
           </div>
         </div>
       </div>

@@ -82,12 +82,12 @@ const SystemInitializer: React.FC = () => {
                 await writable.write(blob);
                 await writable.close();
                 
-                addLog(`✅ Salvo: ${filename}`);
+                addLog(`[OK] Salvo: ${filename}`);
             } else {
-                addLog(`❌ Falha na geração: ${filename}`);
+                addLog(`[ERRO] Falha na geracao: ${filename}`);
             }
         } catch (error: any) {
-            addLog(`❌ Erro em ${filename}: ${error.message}`);
+            addLog(`[ERRO] Erro em ${filename}: ${error.message}`);
         }
         
         completed++;
@@ -102,7 +102,7 @@ const SystemInitializer: React.FC = () => {
         await processImage(`${chapter.id}.png`, chapter.imagePrompt || `Fantasy scene ${chapter.title}`);
       }
 
-      addLog("✨ Protocolo Concluído. Recarregando sistema...");
+      addLog("[CONCLUIDO] Protocolo Concluido. Recarregando sistema...");
       setTimeout(() => {
         window.location.reload();
       }, 2000);
@@ -154,7 +154,7 @@ const SystemInitializer: React.FC = () => {
               <span className="text-slate-600">Aguardando inicialização...</span>
             ) : (
               logs.map((log, i) => (
-                <div key={i} className={`mb-1 ${log.includes('ERRO') || log.includes('❌') ? 'text-red-400' : 'text-slate-400'}`}>
+                <div key={i} className={`mb-1 ${log.includes('ERRO') || log.includes('[ERRO]') ? 'text-red-400' : log.includes('[OK]') || log.includes('[CONCLUIDO]') ? 'text-green-400' : 'text-slate-400'}`}>
                   {log}
                 </div>
               ))

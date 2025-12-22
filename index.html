@@ -59,6 +59,156 @@
       html {
         scroll-behavior: smooth;
       }
+      
+      /* ============================================
+         STEAMPUNK THEME STYLES
+         ============================================ */
+      
+      /* Theme base */
+      .theme-steampunk {
+        --sp-bronze: #cd7f32;
+        --sp-bronze-light: #daa06d;
+        --sp-bronze-dark: #8b5a2b;
+        --sp-copper: #b87333;
+        --sp-brass: #c9a227;
+        --sp-gold: #ffd700;
+        --sp-parchment: #e8dcc8;
+        color: var(--sp-parchment);
+      }
+      
+      /* Bronze plate texture */
+      .sp-bronze-plate {
+        position: relative;
+        background: 
+          repeating-linear-gradient(90deg, transparent 0px, rgba(205, 127, 50, 0.03) 1px, transparent 2px, transparent 4px),
+          linear-gradient(145deg, rgba(218, 160, 109, 0.15) 0%, rgba(205, 127, 50, 0.1) 25%, rgba(139, 90, 43, 0.2) 50%, rgba(205, 127, 50, 0.1) 75%, rgba(218, 160, 109, 0.15) 100%),
+          linear-gradient(180deg, #3d2f24 0%, #2d241c 50%, #251d17 100%);
+        border: 3px solid;
+        border-image: linear-gradient(145deg, #daa06d 0%, #cd7f32 20%, #8b5a2b 50%, #cd7f32 80%, #daa06d 100%) 1;
+        box-shadow: 0 0 30px rgba(205, 127, 50, 0.1), inset 0 2px 10px rgba(0, 0, 0, 0.5), inset 0 -2px 10px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(218, 160, 109, 0.3);
+      }
+      
+      /* Bronze badge - versão arredondada sem border-image */
+      .sp-bronze-badge {
+        position: relative;
+        background: 
+          repeating-linear-gradient(90deg, transparent 0px, rgba(205, 127, 50, 0.03) 1px, transparent 2px, transparent 4px),
+          linear-gradient(145deg, rgba(218, 160, 109, 0.15) 0%, rgba(205, 127, 50, 0.1) 25%, rgba(139, 90, 43, 0.2) 50%, rgba(205, 127, 50, 0.1) 75%, rgba(218, 160, 109, 0.15) 100%),
+          linear-gradient(180deg, #3d2f24 0%, #2d241c 50%, #251d17 100%);
+        border: 2px solid #cd7f32;
+        box-shadow: 0 0 20px rgba(205, 127, 50, 0.2), inset 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 -1px 4px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(218, 160, 109, 0.3);
+      }
+      
+      .sp-bronze-plate::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: 
+          radial-gradient(ellipse 100px 80px at 20% 30%, rgba(74, 124, 89, 0.08) 0%, transparent 70%),
+          radial-gradient(ellipse 60px 40px at 80% 70%, rgba(160, 82, 45, 0.1) 0%, transparent 70%),
+          radial-gradient(ellipse 80px 60px at 60% 20%, rgba(0, 0, 0, 0.15) 0%, transparent 70%),
+          linear-gradient(180deg, rgba(74, 124, 89, 0.03) 0%, transparent 30%, transparent 70%, rgba(74, 124, 89, 0.05) 100%);
+        mix-blend-mode: overlay;
+        z-index: 1;
+      }
+      
+      /* Rivets */
+      .sp-rivets::after {
+        content: '';
+        position: absolute;
+        inset: 8px;
+        pointer-events: none;
+        background-image:
+          radial-gradient(circle 4px at 12px 12px, #daa06d 0%, #8b5a2b 40%, #3d2f24 60%, transparent 61%),
+          radial-gradient(circle 4px at calc(100% - 12px) 12px, #daa06d 0%, #8b5a2b 40%, #3d2f24 60%, transparent 61%),
+          radial-gradient(circle 4px at 12px calc(100% - 12px), #daa06d 0%, #8b5a2b 40%, #3d2f24 60%, transparent 61%),
+          radial-gradient(circle 4px at calc(100% - 12px) calc(100% - 12px), #daa06d 0%, #8b5a2b 40%, #3d2f24 60%, transparent 61%);
+        background-repeat: no-repeat;
+        z-index: 10;
+      }
+      
+      /* Embossed text */
+      .sp-embossed {
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3), 0 -1px 2px rgba(0, 0, 0, 0.6), 0 0 10px rgba(255, 215, 0, 0.2);
+      }
+      
+      /* Gauge style */
+      .sp-gauge {
+        position: relative;
+        height: 10px;
+        background: linear-gradient(180deg, #1a1410 0%, #0f0c09 100%);
+        border: 2px solid #5a4030;
+        border-radius: 5px;
+        overflow: hidden;
+        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8);
+      }
+      
+      .sp-gauge-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #8b5a2b 0%, #cd7f32 50%, #ffd700 100%);
+        border-radius: 3px;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        transition: width 0.5s ease;
+      }
+      
+      /* Gear animations */
+      @keyframes gear-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes gear-spin-reverse {
+        from { transform: rotate(360deg); }
+        to { transform: rotate(0deg); }
+      }
+      
+      /* Victorian divider */
+      .sp-divider {
+        position: relative;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 24px 0;
+      }
+      
+      /* Steampunk scrollbar */
+      .theme-steampunk ::-webkit-scrollbar {
+        width: 12px;
+      }
+      .theme-steampunk ::-webkit-scrollbar-track {
+        background: linear-gradient(90deg, #1a1410 0%, #2d241c 50%, #1a1410 100%);
+        border: 1px solid #3d2f24;
+      }
+      .theme-steampunk ::-webkit-scrollbar-thumb {
+        background: linear-gradient(90deg, #8b5a2b 0%, #cd7f32 50%, #8b5a2b 100%);
+        border-radius: 6px;
+        border: 2px solid #3d2f24;
+      }
+      .theme-steampunk ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(90deg, #cd7f32 0%, #daa06d 50%, #cd7f32 100%);
+      }
+      
+      /* Steampunk Input */
+      .sp-input {
+        background: linear-gradient(180deg, #1a1410 0%, #0f0c09 100%);
+        border: 2px solid #5a4030;
+        border-radius: 6px;
+        color: #daa06d;
+        padding: 8px 12px;
+        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(139, 90, 43, 0.3);
+        transition: border-color 0.3s, box-shadow 0.3s;
+      }
+      .sp-input:focus {
+        border-color: #cd7f32;
+        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 10px rgba(205, 127, 50, 0.3);
+        outline: none;
+      }
+      
+
+      .sp-input::placeholder {
+        color: #5a4a3a;
+      }
     </style>
   <script type="importmap">
 {

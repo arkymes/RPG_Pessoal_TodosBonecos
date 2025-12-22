@@ -5,9 +5,13 @@ import { Hammer, ShieldAlert, Skull, Anchor, Pencil, Save, Shield, Wand2, Loader
 import { useCampaign } from '../context/CampaignContext';
 import { CHAR_LOGAN, buildJsonPrompt } from '../constants';
 import { generateContentWithRetry } from '../utils/gemini';
+import { useTheme } from '../themes/ThemeContext';
 
 const CharacterInfo: React.FC = () => {
   const { images, setImage } = useCampaign();
+  const { currentTheme } = useTheme();
+  const isSteampunk = currentTheme?.id === 'steampunk-victorian';
+  
   const [isEditing, setIsEditing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   
@@ -97,68 +101,68 @@ const CharacterInfo: React.FC = () => {
   return (
     <div className="pt-24 pb-20 container mx-auto max-w-5xl px-4 relative">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
-        <h1 className="text-4xl md:text-6xl font-display text-slate-100 mb-4 drop-shadow-lg">Logan Rylan</h1>
-        <p className="text-copper-500 font-serif italic text-xl">"A engrenagem que sobra é a única que pode substituir as outras."</p>
+        <h1 className={`text-4xl md:text-6xl font-display mb-4 drop-shadow-lg ${isSteampunk ? 'text-amber-100' : 'text-slate-100'}`}>Logan Rylan</h1>
+        <p className={`font-serif italic text-xl ${isSteampunk ? 'text-amber-500' : 'text-copper-500'}`}>"A engrenagem que sobra é a única que pode substituir as outras."</p>
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
         <div className="md:col-span-4 space-y-8">
-          <div className="bg-iron-900 border border-slate-800 rounded-lg p-1 shadow-2xl relative group overflow-hidden">
-            <div className="aspect-[3/4] bg-iron-950 relative overflow-hidden rounded">
+          <div className={`rounded-lg p-1 shadow-2xl relative group overflow-hidden ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900 border border-slate-800'}`}>
+            <div className={`aspect-[3/4] relative overflow-hidden rounded ${isSteampunk ? 'bg-stone-900' : 'bg-iron-950'}`}>
                <img src={characterImageSrc} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${isGenerating || isMagicLoading ? 'blur-sm scale-105' : 'group-hover:scale-105'}`} alt="Logan Rylan Portrait" />
                {(isGenerating || isMagicLoading) && (
                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-20">
-                       <Loader2 className="w-10 h-10 text-copper-500 animate-spin mb-2" />
-                       <span className="text-xs text-copper-400 uppercase font-bold tracking-widest px-4 text-center">{isMagicLoading ? "Alterando Realidade..." : "Materializando Retrato..."}</span>
+                       <Loader2 className={`w-10 h-10 animate-spin mb-2 ${isSteampunk ? 'text-amber-500' : 'text-copper-500'}`} />
+                       <span className={`text-xs uppercase font-bold tracking-widest px-4 text-center ${isSteampunk ? 'text-amber-400' : 'text-copper-400'}`}>{isMagicLoading ? "Alterando Realidade..." : "Materializando Retrato..."}</span>
                    </div>
                )}
-               <button onClick={() => handleGeneratePortrait()} disabled={isGenerating || isMagicLoading} className="absolute top-2 right-2 p-2 bg-iron-950/80 text-copper-500 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-copper-600 hover:text-white border border-slate-700 z-30 shadow-lg flex items-center gap-2 pr-3">
+               <button onClick={() => handleGeneratePortrait()} disabled={isGenerating || isMagicLoading} className={`absolute top-2 right-2 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 border z-30 shadow-lg flex items-center gap-2 pr-3 ${isSteampunk ? 'bg-stone-900/80 text-amber-500 border-stone-600 hover:bg-amber-700 hover:text-white' : 'bg-iron-950/80 text-copper-500 border-slate-700 hover:bg-copper-600 hover:text-white'}`}>
                    <Wand2 className="w-5 h-5" /><span className="text-[10px] font-bold uppercase hidden group-hover:inline">Atualizar Retrato</span>
                </button>
-               <div className="absolute inset-0 bg-gradient-to-t from-iron-900 via-transparent to-transparent opacity-60 pointer-events-none" />
+               <div className={`absolute inset-0 bg-gradient-to-t via-transparent to-transparent opacity-60 pointer-events-none ${isSteampunk ? 'from-stone-900' : 'from-iron-900'}`} />
             </div>
           </div>
 
-          <div className="bg-iron-900/50 border border-slate-800/50 rounded-lg p-6 relative">
-            <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
-                <h3 className="font-display text-slate-300 text-lg">Especificações</h3>
-                <button onClick={() => setIsEditing(!isEditing)} className={`p-1.5 rounded transition-colors ${isEditing ? 'bg-copper-600 text-white' : 'text-slate-500 hover:text-copper-400'}`}>{isEditing ? <Save className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}</button>
+          <div className={`rounded-lg p-6 relative ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/50 border border-slate-800/50'}`}>
+            <div className={`flex justify-between items-center mb-4 border-b pb-2 ${isSteampunk ? 'border-amber-800/30' : 'border-slate-800'}`}>
+                <h3 className={`font-display text-lg ${isSteampunk ? 'text-amber-200' : 'text-slate-300'}`}>Especificações</h3>
+                <button onClick={() => setIsEditing(!isEditing)} className={`p-1.5 rounded transition-colors ${isEditing ? (isSteampunk ? 'bg-amber-700 text-white' : 'bg-copper-600 text-white') : (isSteampunk ? 'text-stone-400 hover:text-amber-400' : 'text-slate-500 hover:text-copper-400')}`}>{isEditing ? <Save className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}</button>
             </div>
-            <ul className="space-y-3 text-sm text-slate-400 font-serif mb-6">
+            <ul className={`space-y-3 text-sm font-serif mb-6 ${isSteampunk ? 'text-stone-400' : 'text-slate-400'}`}>
               {[
                   {k:'age', l:'Idade'}, {k:'height', l:'Altura'}, {k:'eyes', l:'Olhos'}, {k:'hair', l:'Cabelo'}, {k:'marks', l:'Marcas'}
               ].map(field => (
                 <li key={field.k} className="flex flex-col gap-1">
-                    <span className="font-bold text-slate-500 text-xs uppercase">{field.l}</span>
+                    <span className={`font-bold text-xs uppercase ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>{field.l}</span>
                     {isEditing ? (
-                        <input value={charData[field.k as keyof typeof charData]} onChange={(e) => handleChange(field.k, e.target.value)} className="bg-iron-950 border border-slate-700 rounded px-2 py-1 text-slate-200 focus:border-copper-500 outline-none w-full" />
+                        <input value={charData[field.k as keyof typeof charData]} onChange={(e) => handleChange(field.k, e.target.value)} className={`rounded px-2 py-1 focus:outline-none w-full ${isSteampunk ? 'sp-input' : 'bg-iron-950 border border-slate-700 text-slate-200 focus:border-copper-500'}`} />
                     ) : (
-                        <span className="text-slate-200">{charData[field.k as keyof typeof charData]}</span>
+                        <span className={isSteampunk ? 'text-amber-100' : 'text-slate-200'}>{charData[field.k as keyof typeof charData]}</span>
                     )}
                 </li>
               ))}
             </ul>
-            <div className="border-t border-slate-800 pt-4">
+            <div className={`border-t pt-4 ${isSteampunk ? 'border-amber-800/30' : 'border-slate-800'}`}>
                 <div className="flex justify-between items-center mb-2">
-                    <span className="font-display text-slate-300 text-sm block">Aparência Ativa</span>
+                    <span className={`font-display text-sm block ${isSteampunk ? 'text-amber-200' : 'text-slate-300'}`}>Aparência Ativa</span>
                     {!isEditing && (
-                        <button onClick={() => setShowMagicEdit(!showMagicEdit)} className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded border transition-colors ${showMagicEdit ? 'bg-purple-900/30 text-purple-300 border-purple-500/50' : 'bg-iron-950 text-slate-500 hover:text-purple-400 border-slate-700'}`}>
+                        <button onClick={() => setShowMagicEdit(!showMagicEdit)} className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded border transition-colors ${showMagicEdit ? (isSteampunk ? 'bg-amber-900/30 text-amber-300 border-amber-500/50' : 'bg-purple-900/30 text-purple-300 border-purple-500/50') : (isSteampunk ? 'bg-stone-900 text-stone-400 hover:text-amber-400 border-stone-700' : 'bg-iron-950 text-slate-500 hover:text-purple-400 border-slate-700')}`}>
                             <Sparkles className="w-3 h-3" /> IA Edit
                         </button>
                     )}
                 </div>
                 {showMagicEdit && (
-                    <div className="mb-4 bg-purple-900/10 border border-purple-500/30 rounded p-3 animate-in slide-in-from-top-2 duration-300">
+                    <div className={`mb-4 border rounded p-3 animate-in slide-in-from-top-2 duration-300 ${isSteampunk ? 'bg-amber-900/10 border-amber-500/30' : 'bg-purple-900/10 border-purple-500/30'}`}>
                         <div className="flex gap-2">
-                            <input value={magicPrompt} onChange={(e) => setMagicPrompt(e.target.value)} placeholder="Ex: Adicione uma capa..." className="flex-1 bg-iron-950 border border-purple-900/50 rounded px-3 py-2 text-xs text-slate-200 focus:outline-none" onKeyDown={(e) => e.key === 'Enter' && handleMagicUpdate()} />
-                            <button onClick={handleMagicUpdate} disabled={isMagicLoading || !magicPrompt.trim()} className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white p-2 rounded">{isMagicLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}</button>
+                            <input value={magicPrompt} onChange={(e) => setMagicPrompt(e.target.value)} placeholder="Ex: Adicione uma capa..." className={`flex-1 rounded px-3 py-2 text-xs focus:outline-none ${isSteampunk ? 'sp-input' : 'bg-iron-950 border border-purple-900/50 text-slate-200'}`} onKeyDown={(e) => e.key === 'Enter' && handleMagicUpdate()} />
+                            <button onClick={handleMagicUpdate} disabled={isMagicLoading || !magicPrompt.trim()} className={`disabled:opacity-50 text-white p-2 rounded ${isSteampunk ? 'bg-amber-700 hover:bg-amber-600' : 'bg-purple-600 hover:bg-purple-500'}`}>{isMagicLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}</button>
                         </div>
                     </div>
                 )}
                 {isEditing ? (
-                    <textarea value={charData.appearance} onChange={(e) => handleChange('appearance', e.target.value)} className="w-full h-40 bg-iron-950 border border-slate-700 rounded p-2 text-sm text-slate-300 font-serif leading-relaxed focus:border-copper-500 outline-none resize-none" />
+                    <textarea value={charData.appearance} onChange={(e) => handleChange('appearance', e.target.value)} className={`w-full h-40 rounded p-2 text-sm font-serif leading-relaxed outline-none resize-none ${isSteampunk ? 'sp-input' : 'bg-iron-950 border border-slate-700 text-slate-300 focus:border-copper-500'}`} />
                 ) : (
-                    <p className="text-slate-400 text-sm font-serif leading-relaxed italic">{charData.appearance}</p>
+                    <p className={`text-sm font-serif leading-relaxed italic ${isSteampunk ? 'text-stone-400' : 'text-slate-400'}`}>{charData.appearance}</p>
                 )}
             </div>
           </div>
@@ -166,55 +170,55 @@ const CharacterInfo: React.FC = () => {
 
         <div className="md:col-span-8 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <section className="bg-iron-900/30 border border-slate-800 rounded-xl p-6 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Skull className="w-16 h-16 text-purple-500" />
+            <section className={`rounded-xl p-6 relative overflow-hidden group ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/30 border border-slate-800'}`}>
+              <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity ${isSteampunk ? 'text-amber-500' : 'text-purple-500'}`}>
+                <Skull className="w-16 h-16" />
               </div>
-              <h3 className="font-display text-xl text-purple-400 mb-4 flex items-center gap-3">
+              <h3 className={`font-display text-xl mb-4 flex items-center gap-3 ${isSteampunk ? 'text-amber-400' : 'text-purple-400'}`}>
                 <ShieldAlert className="w-5 h-5" /> Maldição de Shadowmoor
               </h3>
-              <div className="prose prose-invert prose-sm font-serif text-slate-400 leading-relaxed">
+              <div className={`prose prose-sm font-serif leading-relaxed ${isSteampunk ? 'text-stone-400' : 'prose-invert text-slate-400'}`}>
                 <p className="mb-3">Logan carrega o fardo do Grimoire da Raiz Retorcida:</p>
                 <ul className="space-y-2 list-none p-0">
-                  <li className="flex gap-2"><span className="text-purple-500 font-bold">●</span><span><strong className="text-slate-200">O Zumbido:</strong> Estática no ouvido que avisa sobre magia selvagem.</span></li>
-                  <li className="flex gap-2"><span className="text-purple-500 font-bold">●</span><span><strong className="text-slate-200">A Sombra Densa:</strong> Uma sombra que parece se mover de forma independente.</span></li>
+                  <li className="flex gap-2"><span className={`font-bold ${isSteampunk ? 'text-amber-500' : 'text-purple-500'}`}>●</span><span><strong className={isSteampunk ? 'text-amber-100' : 'text-slate-200'}>O Zumbido:</strong> Estática no ouvido que avisa sobre magia selvagem.</span></li>
+                  <li className="flex gap-2"><span className={`font-bold ${isSteampunk ? 'text-amber-500' : 'text-purple-500'}`}>●</span><span><strong className={isSteampunk ? 'text-amber-100' : 'text-slate-200'}>A Sombra Densa:</strong> Uma sombra que parece se mover de forma independente.</span></li>
                 </ul>
               </div>
             </section>
 
-            <section className="bg-iron-900/30 border border-slate-800 rounded-xl p-6 group">
-              <h3 className="font-display text-xl text-copper-400 mb-4 flex items-center gap-3">
+            <section className={`rounded-xl p-6 group ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/30 border border-slate-800'}`}>
+              <h3 className={`font-display text-xl mb-4 flex items-center gap-3 ${isSteampunk ? 'text-amber-400' : 'text-copper-400'}`}>
                 <Users className="w-5 h-5" /> Relacionamentos
               </h3>
               <div className="space-y-4">
-                <div className="border-l-2 border-slate-700 pl-4 py-1">
-                  <h4 className="text-sm font-bold text-slate-200">Gareth Aldren <span className="text-[10px] text-red-500 uppercase ml-2 tracking-widest">Rival</span></h4>
-                  <p className="text-xs text-slate-500 italic mt-1 font-serif">O outro bolsista que usou o carisma para subir, enquanto Logan usava a mente. O roubo do Aégis foi o golpe final.</p>
+                <div className={`border-l-2 pl-4 py-1 ${isSteampunk ? 'border-stone-600' : 'border-slate-700'}`}>
+                  <h4 className={`text-sm font-bold ${isSteampunk ? 'text-amber-100' : 'text-slate-200'}`}>Gareth Aldren <span className="text-[10px] text-red-500 uppercase ml-2 tracking-widest">Rival</span></h4>
+                  <p className={`text-xs italic mt-1 font-serif ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>O outro bolsista que usou o carisma para subir, enquanto Logan usava a mente. O roubo do Aégis foi o golpe final.</p>
                 </div>
-                <div className="border-l-2 border-slate-700 pl-4 py-1">
-                  <h4 className="text-sm font-bold text-slate-200">Koggle Sprocketwhistle <span className="text-[10px] text-emerald-500 uppercase ml-2 tracking-widest">Mentor</span></h4>
-                  <p className="text-xs text-slate-500 italic mt-1 font-serif">O gnomo que ensinou a Logan que ferramentas são extensões da alma.</p>
+                <div className={`border-l-2 pl-4 py-1 ${isSteampunk ? 'border-stone-600' : 'border-slate-700'}`}>
+                  <h4 className={`text-sm font-bold ${isSteampunk ? 'text-amber-100' : 'text-slate-200'}`}>Koggle Sprocketwhistle <span className="text-[10px] text-emerald-500 uppercase ml-2 tracking-widest">Mentor</span></h4>
+                  <p className={`text-xs italic mt-1 font-serif ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>O gnomo que ensinou a Logan que ferramentas são extensões da alma.</p>
                 </div>
               </div>
             </section>
           </div>
 
-          <section className="bg-iron-900/40 border border-slate-800 rounded-xl p-8 relative">
-            <div className="absolute top-0 right-0 p-6 opacity-5"><Wrench className="w-32 h-32 text-copper-600" /></div>
-            <h3 className="font-display text-2xl text-slate-200 mb-6 flex items-center gap-4"><Zap className="w-6 h-6 text-copper-500" /> Arsenais de um Exilado</h3>
+          <section className={`rounded-xl p-8 relative ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/40 border border-slate-800'}`}>
+            <div className={`absolute top-0 right-0 p-6 opacity-5 ${isSteampunk ? 'text-amber-600' : 'text-copper-600'}`}><Wrench className="w-32 h-32" /></div>
+            <h3 className={`font-display text-2xl mb-6 flex items-center gap-4 ${isSteampunk ? 'text-amber-100' : 'text-slate-200'}`}><Zap className={`w-6 h-6 ${isSteampunk ? 'text-amber-500' : 'text-copper-500'}`} /> Arsenais de um Exilado</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 font-serif">
               <div>
-                <h4 className="text-copper-400 font-display text-sm uppercase tracking-widest mb-3 border-b border-slate-800 pb-1">Set de Combate</h4>
-                <p className="text-sm text-slate-400 leading-relaxed">Logan mantém sua scimitarra pronta para vetores de ataque rápidos e seu escudo de aço para defesas calculadas. Sua Cota de Escamas protege seu corpo franzino sem tirar a agilidade.</p>
+                <h4 className={`font-display text-sm uppercase tracking-widest mb-3 border-b pb-1 ${isSteampunk ? 'text-amber-400 border-amber-800/30' : 'text-copper-400 border-slate-800'}`}>Set de Combate</h4>
+                <p className={`text-sm leading-relaxed ${isSteampunk ? 'text-stone-400' : 'text-slate-400'}`}>Logan mantém sua scimitarra pronta para vetores de ataque rápidos e seu escudo de aço para defesas calculadas. Sua Cota de Escamas protege seu corpo franzino sem tirar a agilidade.</p>
               </div>
               <div>
-                <h4 className="text-copper-400 font-display text-sm uppercase tracking-widest mb-3 border-b border-slate-800 pb-1">Bolsas de Ferramentas</h4>
-                <p className="text-sm text-slate-400 leading-relaxed">Cruzando o peito, as bolsas guardam gazuas, chaves de precisão e óleos rúnicos. Cada ferramenta é uma solução para um problema mecânico ou físico.</p>
+                <h4 className={`font-display text-sm uppercase tracking-widest mb-3 border-b pb-1 ${isSteampunk ? 'text-amber-400 border-amber-800/30' : 'text-copper-400 border-slate-800'}`}>Bolsas de Ferramentas</h4>
+                <p className={`text-sm leading-relaxed ${isSteampunk ? 'text-stone-400' : 'text-slate-400'}`}>Cruzando o peito, as bolsas guardam gazuas, chaves de precisão e óleos rúnicos. Cada ferramenta é uma solução para um problema mecânico ou físico.</p>
               </div>
             </div>
           </section>
 
-          <section className="bg-iron-950/50 border border-slate-800/50 rounded-xl p-8 italic font-serif text-slate-500 text-center">
+          <section className={`rounded-xl p-8 italic font-serif text-center ${isSteampunk ? 'sp-bronze-plate sp-rivets text-stone-500' : 'bg-iron-950/50 border border-slate-800/50 text-slate-500'}`}>
             <p className="max-w-2xl mx-auto italic">"Aos 17 anos, ele já sabe que a maior ferramenta não é o martelo, mas o carisma que ele não tem e a verdade que ele busca."</p>
           </section>
         </div>

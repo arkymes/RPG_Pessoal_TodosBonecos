@@ -6,11 +6,74 @@ import TabNavigation from './components/TabNavigation';
 import CharacterInfo from './components/CharacterInfo';
 import CharacterSheet from './components/CharacterSheet';
 import { CampaignProvider } from './context/CampaignContext';
+import { ThemeProvider, useTheme } from './themes/ThemeContext';
 import { STORY_DATA } from './constants';
 
-const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('story');
+// Steampunk Components
+import { 
+  SteampunkLayout, 
+  SteampunkHeader, 
+  SteampunkFooter,
+  SteampunkChapterView,
+  SteampunkHero
+} from './components/steampunk';
 
+// Componente interno que usa o tema
+const ThemedApp: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('story');
+  const { currentCharacter, currentTheme } = useTheme();
+  
+  // Verificar se é tema steampunk
+  const isSteampunk = currentTheme.id === 'steampunk-victorian';
+
+  // Se for steampunk, usar layout especial
+  if (isSteampunk) {
+    return (
+      <CampaignProvider>
+        <SteampunkLayout showScrollGears={activeTab === 'story'}>
+          <SteampunkHeader activeTab={activeTab} setActiveTab={setActiveTab} />
+          
+          {/* Navigation (Table of Contents) only shows on Story tab */}
+          {activeTab === 'story' && <Navigation />}
+          
+          <main className="pt-20 relative z-10">
+            {activeTab === 'story' && (
+              <>
+                {/* Hero Steampunk */}
+                <SteampunkHero />
+                
+                <div className="container mx-auto max-w-4xl pt-10 pb-40">
+                  <div className="flex flex-col space-y-0">
+                    {STORY_DATA.map((chapter, index) => (
+                      <SteampunkChapterView 
+                        key={chapter.id} 
+                        chapter={chapter} 
+                        index={index} 
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeTab === 'info' && (
+              <div className="container mx-auto max-w-4xl px-4 py-10">
+                <CharacterInfo />
+              </div>
+            )}
+
+            {activeTab === 'sheet' && (
+              <CharacterSheet />
+            )}
+          </main>
+
+          <SteampunkFooter />
+        </SteampunkLayout>
+      </CampaignProvider>
+    );
+  }
+
+  // Layout padrão (para outros temas futuros)
   return (
     <CampaignProvider>
       <div className="min-h-screen bg-iron-950 text-slate-300 selection:bg-purple-900 selection:text-white relative">
@@ -61,6 +124,15 @@ const App: React.FC = () => {
         </footer>
       </div>
     </CampaignProvider>
+  );
+};
+
+// App principal com ThemeProvider
+const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <ThemedApp />
+    </ThemeProvider>
   );
 };
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Save, Shield, Heart, Zap, Swords, Scroll, ChevronDown, ChevronUp, Flame, Trash2, Plus, AlertTriangle, Globe, BookOpen, X, Download, Star, Box, Activity, ArrowUpCircle, Info, ListChecks, Lock, Loader2 } from 'lucide-react';
 import WikidotImporter from './WikidotImporter';
 import { fetchWithFallback, parseSpellPage, slugifySpell } from '../utils/wikidot';
+import { useTheme } from '../themes/ThemeContext';
+import { Gear } from './steampunk/Gear';
 
 type ItemType = 'weapon' | 'armor' | 'shield' | 'misc';
 
@@ -232,6 +234,45 @@ const upgradeDie = (damage: string, properties: string[] = []) => {
 
 const normalizeKey = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
 
+// Toggle dinamico que muda baseado no tema
+const DynamicToggle = ({ checked, onChange, theme, size = "md", isSteampunk = false }: { checked: boolean, onChange: (v: boolean) => void, theme: any, size?: "sm"|"md", isSteampunk?: boolean }) => {
+    const gearSize = size === "sm" ? 20 : 28;
+    
+    if (isSteampunk) {
+        return (
+            <button 
+                onClick={() => onChange(!checked)}
+                className="relative flex items-center justify-center group outline-none focus:outline-none"
+                style={{ width: gearSize, height: gearSize }}
+            >
+                <Gear
+                    size={gearSize}
+                    teeth={size === "sm" ? 8 : 10}
+                    spinning={checked}
+                    active={checked}
+                    speed="slow"
+                    style="small"
+                />
+            </button>
+        );
+    }
+    
+    // Fallback para o DiamondToggle original
+    return (
+        <button 
+            onClick={() => onChange(!checked)}
+            className="relative flex items-center justify-center group outline-none focus:outline-none"
+            style={{ width: size === "sm" ? 16 : 24, height: size === "sm" ? 16 : 24 }}
+        >
+            <div className={`absolute inset-0 transition-all duration-300 rounded-sm rotate-45 ${checked ? `opacity-60 blur-[4px] ${theme.bg}` : 'opacity-0'}`} />
+            <div className={`relative w-full h-full rotate-45 border transition-all duration-300 flex items-center justify-center ${checked ? `${theme.bg} ${theme.border}` : 'bg-iron-950 border-slate-700 group-hover:border-slate-500'} ${size === "sm" ? "border" : "border-2"}`}>
+                {checked && <div className="w-[40%] h-[40%] bg-white rounded-full shadow-inner opacity-80" />}
+            </div>
+        </button>
+    );
+};
+
+// Manter DiamondToggle para compatibilidade
 const DiamondToggle = ({ checked, onChange, theme, size = "md" }: { checked: boolean, onChange: (v: boolean) => void, theme: any, size?: "sm"|"md" }) => {
     return (
         <button 
@@ -247,7 +288,7 @@ const DiamondToggle = ({ checked, onChange, theme, size = "md" }: { checked: boo
     );
 };
 
-const AttributeBlock = React.memo(({ config, data, update }: { config: any, data: CharacterSheetData, update: any }) => {
+const AttributeBlock = React.memo(({ config, data, update, isSteampunk = false }: { config: any, data: CharacterSheetData, update: any, isSteampunk?: boolean }) => {
     if (!data?.stats) return null;
     const attrKey = config.key as keyof CharacterSheetData['stats'];
     const score = data.stats[attrKey] ?? 10;
@@ -256,35 +297,48 @@ const AttributeBlock = React.memo(({ config, data, update }: { config: any, data
     const isSaveProf = data.savingThrows?.[attrKey] || false;
     const saveVal = mod + (isSaveProf ? profBonus : 0);
 
+    // Classes condicionais baseadas no tema
+    const panelClass = isSteampunk 
+        ? "sp-bronze-plate sp-rivets overflow-hidden flex flex-col h-full group transition-all p-1"
+        : "bg-iron-900/60 border border-slate-800/80 rounded-xl overflow-hidden flex flex-col h-full group transition-all hover:border-slate-700/80 hover:shadow-lg hover:shadow-black/20";
+    
+    const headerClass = isSteampunk
+        ? "relative p-3 pb-2 flex items-center justify-between bg-gradient-to-b from-amber-900/20 to-transparent"
+        : "relative p-3 pb-2 flex items-center justify-between bg-gradient-to-b from-iron-800/40 to-transparent";
+    
+    const inputClass = isSteampunk
+        ? "sp-input w-10 text-center text-[10px]"
+        : "bg-iron-950/50 border border-slate-800 rounded w-10 text-center text-[10px] text-slate-500 focus:outline-none focus:text-slate-200 focus:border-slate-600 transition-colors";
+
     return (
-        <div className="bg-iron-900/60 border border-slate-800/80 rounded-xl overflow-hidden flex flex-col h-full group transition-all hover:border-slate-700/80 hover:shadow-lg hover:shadow-black/20">
-            <div className="relative p-3 pb-2 flex items-center justify-between bg-gradient-to-b from-iron-800/40 to-transparent">
+        <div className={panelClass}>
+            <div className={headerClass}>
                 <div className="flex flex-col z-10">
-                    <span className={`text-[10px] uppercase font-bold tracking-[0.2em] mb-1 ${config.theme.text} opacity-80`}>{config.label}</span>
+                    <span className={`text-[10px] uppercase font-bold tracking-[0.2em] mb-1 ${isSteampunk ? 'text-amber-200' : config.theme.text} opacity-80`}>{config.label}</span>
                     <input 
                         type="number"
                         value={score}
                         onChange={(e) => update(`stats.${attrKey}`, parseInt(e.target.value) || 10)}
-                        className="bg-iron-950/50 border border-slate-800 rounded w-10 text-center text-[10px] text-slate-500 focus:outline-none focus:text-slate-200 focus:border-slate-600 transition-colors"
+                        className={inputClass}
                         title="Valor Base"
                     />
                 </div>
                 <div className="flex items-center justify-center relative w-12 h-12">
                     <div className="absolute inset-0 opacity-10 rounded-full blur-xl bg-white" />
-                    <span className={`text-4xl font-display font-bold ${config.theme.text} drop-shadow-sm`}>
+                    <span className={`text-4xl font-display font-bold ${isSteampunk ? 'text-amber-100' : config.theme.text} drop-shadow-sm`}>
                         {mod >= 0 ? `+${mod}` : mod}
                     </span>
                 </div>
             </div>
             <div className="px-3 pb-3 space-y-3 flex-1">
-                <div className={`flex items-center justify-between rounded-lg px-3 py-2 border transition-all duration-300 ${isSaveProf ? `bg-${config.key === 'cha' || config.key === 'str' ? 'white' : 'black'}/5 ${config.theme.border} border-opacity-30` : 'bg-iron-950/30 border-slate-800/50'}`}>
+                <div className={`flex items-center justify-between rounded-lg px-3 py-2 border transition-all duration-300 ${isSaveProf ? (isSteampunk ? 'bg-amber-900/20 border-amber-700/30' : `bg-${config.key === 'cha' || config.key === 'str' ? 'white' : 'black'}/5 ${config.theme.border} border-opacity-30`) : (isSteampunk ? 'bg-stone-900/30 border-stone-700/30' : 'bg-iron-950/30 border-slate-800/50')}`}>
                     <div className="flex items-center gap-3">
-                        <DiamondToggle checked={isSaveProf} onChange={(c) => update(`savingThrows.${attrKey}`, c)} theme={config.theme} size="md" />
-                        <span className={`text-xs font-bold uppercase tracking-wider ${isSaveProf ? 'text-slate-200' : 'text-slate-500'}`}>Salvaguarda</span>
+                        <DynamicToggle checked={isSaveProf} onChange={(c) => update(`savingThrows.${attrKey}`, c)} theme={config.theme} size="md" isSteampunk={isSteampunk} />
+                        <span className={`text-xs font-bold uppercase tracking-wider ${isSaveProf ? (isSteampunk ? 'text-amber-100' : 'text-slate-200') : (isSteampunk ? 'text-stone-400' : 'text-slate-500')}`}>Salvaguarda</span>
                     </div>
-                    <span className={`text-sm font-bold font-mono ${isSaveProf ? config.theme.text : 'text-slate-600'}`}>{saveVal >= 0 ? `+${saveVal}` : saveVal}</span>
+                    <span className={`text-sm font-bold font-mono ${isSaveProf ? (isSteampunk ? 'text-amber-200' : config.theme.text) : (isSteampunk ? 'text-stone-500' : 'text-slate-600')}`}>{saveVal >= 0 ? `+${saveVal}` : saveVal}</span>
                 </div>
-                {Object.keys(config.skills).length > 0 && <div className="h-px bg-slate-800/50 w-full" />}
+                {Object.keys(config.skills).length > 0 && <div className={`h-px w-full ${isSteampunk ? 'bg-amber-800/30' : 'bg-slate-800/50'}`} />}
                 <div className="space-y-1">
                     {Object.entries(config.skills).map(([skillKey, skillLabel]) => {
                         // @ts-ignore
@@ -300,7 +354,9 @@ const AttributeBlock = React.memo(({ config, data, update }: { config: any, data
                                 const needed = activePrompt.count;
                                 isSuggested = activePrompt.options.includes(skillKey);
                                 if (isSuggested && !isProf && currentPicks < needed) {
-                                    highlightClass = "border-copper-500/80 bg-copper-900/10 shadow-[0_0_8px_rgba(245,158,11,0.2)] animate-pulse";
+                                    highlightClass = isSteampunk 
+                                        ? "border-amber-500/80 bg-amber-900/20 shadow-[0_0_8px_rgba(217,119,6,0.3)] animate-pulse"
+                                        : "border-copper-500/80 bg-copper-900/10 shadow-[0_0_8px_rgba(245,158,11,0.2)] animate-pulse";
                                 }
                             }
                         }
@@ -309,13 +365,13 @@ const AttributeBlock = React.memo(({ config, data, update }: { config: any, data
                             <div key={skillKey} className={`flex items-center justify-between px-2 py-1.5 rounded border border-transparent transition-colors group/skill cursor-pointer ${highlightClass} ${!highlightClass ? 'hover:bg-white/5' : ''}`} onClick={() => update(`skills.${skillKey}`, !isProf)}>
                                 <div className="flex items-center gap-3">
                                     <div onClick={(e) => e.stopPropagation()}>
-                                        <DiamondToggle checked={isProf} onChange={(c) => update(`skills.${skillKey}`, c)} theme={config.theme} size="sm" />
+                                        <DynamicToggle checked={isProf} onChange={(c) => update(`skills.${skillKey}`, c)} theme={config.theme} size="sm" isSteampunk={isSteampunk} />
                                     </div>
-                                    <span className={`text-xs transition-colors ${isProf ? 'text-slate-200 font-medium' : 'text-slate-500 group-hover/skill:text-slate-400'} ${isSuggested && !isProf ? 'text-copper-400 font-medium' : ''}`}>
+                                    <span className={`text-xs transition-colors ${isProf ? (isSteampunk ? 'text-amber-100 font-medium' : 'text-slate-200 font-medium') : (isSteampunk ? 'text-stone-400 group-hover/skill:text-stone-300' : 'text-slate-500 group-hover/skill:text-slate-400')} ${isSuggested && !isProf ? (isSteampunk ? 'text-amber-400 font-medium' : 'text-copper-400 font-medium') : ''}`}>
                                         {skillLabel as string}
                                     </span>
                                 </div>
-                                <span className={`text-xs font-mono transition-colors ${isProf ? `${config.theme.text} font-bold` : 'text-slate-600'}`}>{skillVal >= 0 ? `+${skillVal}` : skillVal}</span>
+                                <span className={`text-xs font-mono transition-colors ${isProf ? (isSteampunk ? 'text-amber-200 font-bold' : `${config.theme.text} font-bold`) : (isSteampunk ? 'text-stone-500' : 'text-slate-600')}`}>{skillVal >= 0 ? `+${skillVal}` : skillVal}</span>
                             </div>
                         )
                     })}
@@ -326,6 +382,9 @@ const AttributeBlock = React.memo(({ config, data, update }: { config: any, data
 });
 
 const CharacterSheet: React.FC = () => {
+  const { currentTheme, currentCharacter } = useTheme();
+  const isSteampunk = currentTheme?.id === 'steampunk-victorian';
+  
   const [data, setData] = useState<CharacterSheetData>(DEFAULT_DATA);
   const [isSaved, setIsSaved] = useState(false);
   const [showSpells, setShowSpells] = useState(false);
@@ -1064,29 +1123,37 @@ const CharacterSheet: React.FC = () => {
         <div className="flex-1 w-full">
             {/* Name Row */}
             <div className="mb-3">
-                <input 
-                    value={data.info.name || ""}
-                    onChange={(e) => update('info.name', e.target.value)}
-                    className="text-3xl md:text-5xl font-display font-bold text-slate-100 bg-transparent focus:outline-none w-full placeholder:text-slate-700"
-                    placeholder="Nome do Personagem"
-                />
+                {isSteampunk ? (
+                    <h1 className="text-3xl md:text-5xl font-display leading-tight">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700 sp-embossed">
+                            {currentCharacter.name}
+                        </span>
+                    </h1>
+                ) : (
+                    <input 
+                        value={data.info.name || ""}
+                        onChange={(e) => update('info.name', e.target.value)}
+                        className="text-3xl md:text-5xl font-display font-bold bg-transparent focus:outline-none w-full text-slate-100 placeholder:text-slate-700"
+                        placeholder="Nome do Personagem"
+                    />
+                )}
             </div>
             
             {/* Details Row: Class Box, XP, Race/Bg */}
             <div className="flex flex-wrap items-center gap-4">
                 
                 {/* Class & Level Box */}
-                <div className="flex items-center gap-2 bg-iron-900/50 p-1.5 rounded-lg border border-slate-800/50">
-                    <span className="text-copper-500 font-serif text-lg italic pl-2 pr-1">{data.info.className}</span>
+                <div className={`flex items-center gap-2 p-1.5 rounded-lg ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/50 border border-slate-800/50'}`}>
+                    <span className={`font-serif text-lg italic pl-2 pr-1 ${isSteampunk ? 'text-amber-400' : 'text-copper-500'}`}>{data.info.className}</span>
                     
-                    <div className="flex items-center gap-1 bg-iron-950 border border-slate-700 rounded px-2 py-0.5">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase">NV</span>
-                        <span className="text-base font-bold text-white">{data.info.level}</span>
+                    <div className={`flex items-center gap-1 rounded px-2 py-0.5 ${isSteampunk ? 'sp-wood-inset' : 'bg-iron-950 border border-slate-700'}`}>
+                        <span className={`text-[10px] font-bold uppercase ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>NV</span>
+                        <span className={`text-base font-bold ${isSteampunk ? 'text-amber-100' : 'text-white'}`}>{data.info.level}</span>
                     </div>
 
                     <button 
                         onClick={initiateLevelUp}
-                        className="bg-copper-600 hover:bg-copper-500 text-white p-1 rounded transition-colors"
+                        className={`p-1 rounded transition-colors ${isSteampunk ? 'bg-amber-700 hover:bg-amber-600 text-amber-100' : 'bg-copper-600 hover:bg-copper-500 text-white'}`}
                         title="Level Up!"
                     >
                         <ArrowUpCircle className="w-4 h-4" />
@@ -1094,7 +1161,7 @@ const CharacterSheet: React.FC = () => {
 
                     <button 
                         onClick={() => handleOpenImporter('classes')}
-                        className="p-1 rounded hover:bg-white/10 text-slate-500 hover:text-copper-400 transition-colors border-l border-slate-700 ml-1 pl-2"
+                        className={`p-1 rounded transition-colors border-l ml-1 pl-2 ${isSteampunk ? 'hover:bg-amber-900/30 text-stone-500 hover:text-amber-400 border-stone-700' : 'hover:bg-white/10 text-slate-500 hover:text-copper-400 border-slate-700'}`}
                         title="Importar Classe"
                     >
                         <Download className="w-4 h-4" />
@@ -1102,21 +1169,21 @@ const CharacterSheet: React.FC = () => {
                 </div>
 
                 {/* XP Display */}
-                <div className="flex items-center gap-2 text-xs text-slate-500 font-bold uppercase tracking-widest bg-iron-900/30 px-3 py-2 rounded border border-slate-800/50">
+                <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-3 py-2 rounded ${isSteampunk ? 'sp-wood-inset text-stone-500' : 'bg-iron-900/30 border border-slate-800/50 text-slate-500'}`}>
                      <span>XP</span>
                      <input 
                         value={data.info.xp} 
                         onChange={(e) => update('info.xp', e.target.value)} 
-                        className="bg-transparent w-16 focus:outline-none text-slate-300 font-mono text-right" 
+                        className={`bg-transparent w-16 focus:outline-none font-mono text-right ${isSteampunk ? 'text-amber-100' : 'text-slate-300'}`}
                         placeholder="0"
                      />
                 </div>
 
                 {/* Static Details (Race/Background) */}
                 {(data.info.race || data.info.background) && (
-                    <div className="flex items-center gap-3 text-xs text-slate-500 font-bold uppercase tracking-widest pl-2 border-l border-slate-800/50 hidden md:flex">
+                    <div className={`flex items-center gap-3 text-xs font-bold uppercase tracking-widest pl-2 hidden md:flex ${isSteampunk ? 'text-stone-500 border-l border-stone-700/50' : 'text-slate-500 border-l border-slate-800/50'}`}>
                         {data.info.race && <span>{data.info.race}</span>}
-                        {data.info.race && data.info.background && <span className="w-1 h-1 bg-slate-700 rounded-full"/>}
+                        {data.info.race && data.info.background && <span className={`w-1 h-1 rounded-full ${isSteampunk ? 'bg-stone-600' : 'bg-slate-700'}`}/>}
                         {data.info.background && <span>{data.info.background}</span>}
                     </div>
                 )}
@@ -1161,52 +1228,52 @@ const CharacterSheet: React.FC = () => {
 
       {/* --- COMBAT STATS GRID --- */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
-         <div className="col-span-2 bg-iron-900/50 border border-slate-800 rounded-xl p-4 flex items-center gap-4 relative overflow-hidden">
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-600" />
-            <div className="bg-iron-950 p-3 rounded-full border border-red-900/30">
-                <Heart className="w-6 h-6 text-red-500" />
+         <div className={`col-span-2 rounded-xl p-4 flex items-center gap-4 relative overflow-hidden ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/50 border border-slate-800'}`}>
+            <div className={`absolute left-0 top-0 bottom-0 w-1 ${isSteampunk ? 'bg-red-700' : 'bg-red-600'}`} />
+            <div className={`p-3 rounded-full ${isSteampunk ? 'bg-stone-900 border border-red-800/30' : 'bg-iron-950 border border-red-900/30'}`}>
+                <Heart className={`w-6 h-6 ${isSteampunk ? 'text-red-400' : 'text-red-500'}`} />
             </div>
             <div className="flex-1 z-10">
                 <div className="flex justify-between items-end mb-1">
-                    <span className="text-[10px] uppercase font-bold text-slate-500">Pontos de Vida</span>
+                    <span className={`text-[10px] uppercase font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>Pontos de Vida</span>
                     <div className="flex items-center gap-1 text-xs">
-                         <span className="text-slate-500">Max:</span>
-                         <input value={data.combat.hpMax} onChange={(e) => update('combat.hpMax', parseInt(e.target.value))} className="w-8 bg-transparent text-right text-slate-300 focus:outline-none font-bold" type="number" />
+                         <span className={isSteampunk ? 'text-stone-400' : 'text-slate-500'}>Max:</span>
+                         <input value={data.combat.hpMax} onChange={(e) => update('combat.hpMax', parseInt(e.target.value))} className={`w-8 bg-transparent text-right focus:outline-none font-bold ${isSteampunk ? 'text-amber-100' : 'text-slate-300'}`} type="number" />
                     </div>
                 </div>
                 <div className="flex items-baseline gap-2">
-                    <input type="number" value={data.combat.hpCurrent} onChange={(e) => update('combat.hpCurrent', parseInt(e.target.value))} className="text-4xl font-display font-bold text-slate-100 bg-transparent w-24 focus:outline-none" />
+                    <input type="number" value={data.combat.hpCurrent} onChange={(e) => update('combat.hpCurrent', parseInt(e.target.value))} className={`text-4xl font-display font-bold bg-transparent w-24 focus:outline-none ${isSteampunk ? 'text-amber-50' : 'text-slate-100'}`} />
                     <div className="flex flex-col">
-                        <span className="text-[9px] uppercase font-bold text-copper-500">Temp</span>
-                        <input value={data.combat.hpTemp || 0} onChange={(e) => update('combat.hpTemp', parseInt(e.target.value))} className="w-8 bg-transparent text-slate-400 text-xs focus:outline-none border-b border-slate-800" type="number" />
+                        <span className={`text-[9px] uppercase font-bold ${isSteampunk ? 'text-amber-500' : 'text-copper-500'}`}>Temp</span>
+                        <input value={data.combat.hpTemp || 0} onChange={(e) => update('combat.hpTemp', parseInt(e.target.value))} className={`w-8 bg-transparent text-xs focus:outline-none border-b ${isSteampunk ? 'text-stone-300 border-stone-700' : 'text-slate-400 border-slate-800'}`} type="number" />
                     </div>
                 </div>
                 <div className="flex items-center gap-2 mt-2">
-                    <div className="h-1.5 flex-1 bg-iron-950 rounded-full overflow-hidden border border-slate-800/50">
-                        <div className="h-full bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.5)]" style={{ width: `${Math.min(100, (data.combat.hpCurrent / (data.combat.hpMax || 1)) * 100)}%` }} />
+                    <div className={`h-1.5 flex-1 rounded-full overflow-hidden border ${isSteampunk ? 'bg-stone-900 border-stone-700/50' : 'bg-iron-950 border-slate-800/50'}`}>
+                        <div className={`h-full ${isSteampunk ? 'bg-red-700 shadow-[0_0_10px_rgba(185,28,28,0.5)]' : 'bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.5)]'}`} style={{ width: `${Math.min(100, (data.combat.hpCurrent / (data.combat.hpMax || 1)) * 100)}%` }} />
                     </div>
-                    <div className="text-[10px] text-slate-500 font-mono" title="Dados de Vida">{data.info.level}d{data.hitDieType}</div>
+                    <div className={`text-[10px] font-mono ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`} title="Dados de Vida">{data.info.level}d{data.hitDieType}</div>
                 </div>
             </div>
          </div>
 
-         <div className="bg-iron-900/50 border border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center">
-             <Shield className="w-6 h-6 text-slate-400 mb-1" />
-             <span className="text-4xl font-display font-bold text-white">{calculatedStats.ac}</span>
-             <span className="text-[10px] uppercase font-bold text-slate-500">CA</span>
+         <div className={`rounded-xl p-3 flex flex-col items-center justify-center ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/50 border border-slate-800'}`}>
+             <Shield className={`w-6 h-6 mb-1 ${isSteampunk ? 'text-amber-400' : 'text-slate-400'}`} />
+             <span className={`text-4xl font-display font-bold ${isSteampunk ? 'text-amber-50' : 'text-white'}`}>{calculatedStats.ac}</span>
+             <span className={`text-[10px] uppercase font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>CA</span>
          </div>
 
-         <div className="bg-iron-900/50 border border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center">
-             <Zap className="w-6 h-6 text-yellow-500 mb-1" />
-             <span className="text-4xl font-display font-bold text-white">{calculatedStats.initiative >= 0 ? `+${calculatedStats.initiative}` : calculatedStats.initiative}</span>
-             <span className="text-[10px] uppercase font-bold text-slate-500">Iniciativa</span>
+         <div className={`rounded-xl p-3 flex flex-col items-center justify-center ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/50 border border-slate-800'}`}>
+             <Zap className={`w-6 h-6 mb-1 ${isSteampunk ? 'text-amber-400' : 'text-yellow-500'}`} />
+             <span className={`text-4xl font-display font-bold ${isSteampunk ? 'text-amber-50' : 'text-white'}`}>{calculatedStats.initiative >= 0 ? `+${calculatedStats.initiative}` : calculatedStats.initiative}</span>
+             <span className={`text-[10px] uppercase font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>Iniciativa</span>
          </div>
 
-         <div className="hidden lg:flex bg-iron-900/50 border border-slate-800 rounded-xl p-3 flex-col items-center justify-center">
-             <div className="text-sm font-bold text-slate-400 mb-1">Deslocamento</div>
+         <div className={`hidden lg:flex rounded-xl p-3 flex-col items-center justify-center ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/50 border border-slate-800'}`}>
+             <div className={`text-sm font-bold mb-1 ${isSteampunk ? 'text-amber-300' : 'text-slate-400'}`}>Deslocamento</div>
              <div className="flex items-baseline gap-1">
-                <input value={data.combat.speed} onChange={(e) => update('combat.speed', e.target.value)} className="text-3xl font-display font-bold text-white bg-transparent w-12 text-center focus:outline-none" />
-                <span className="text-xs text-slate-600">m</span>
+                <input value={data.combat.speed} onChange={(e) => update('combat.speed', e.target.value)} className={`text-3xl font-display font-bold bg-transparent w-12 text-center focus:outline-none ${isSteampunk ? 'text-amber-50' : 'text-white'}`} />
+                <span className={`text-xs ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`}>m</span>
              </div>
          </div>
       </div>
@@ -1215,17 +1282,17 @@ const CharacterSheet: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-7 xl:col-span-8">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {ABILITY_CONFIG.map(config => <AttributeBlock key={config.key} config={config} data={data} update={update} />)}
+                  {ABILITY_CONFIG.map(config => <AttributeBlock key={config.key} config={config} data={data} update={update} isSteampunk={isSteampunk} />)}
               </div>
               
-              <div className="mt-6 bg-iron-900/30 border border-slate-800 rounded-xl p-4">
-                  <h3 className="flex items-center gap-2 font-display text-slate-300 text-sm mb-4"><Activity className="w-4 h-4 text-copper-500" /> Proficiências & Idiomas</h3>
+              <div className={`mt-6 rounded-xl p-4 ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/30 border border-slate-800'}`}>
+                  <h3 className={`flex items-center gap-2 font-display text-sm mb-4 ${isSteampunk ? 'text-amber-200' : 'text-slate-300'}`}><Activity className={`w-4 h-4 ${isSteampunk ? 'text-amber-400' : 'text-copper-500'}`} /> Proficiências & Idiomas</h3>
                   {/* ... Proficiencies UI ... */}
-                  <div className="mb-4 pb-4 border-b border-slate-800/50">
-                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Armaduras</span>
+                  <div className={`mb-4 pb-4 border-b ${isSteampunk ? 'border-amber-800/30' : 'border-slate-800/50'}`}>
+                       <span className={`text-[10px] font-bold uppercase tracking-wider mb-2 block ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>Armaduras</span>
                        <div className="flex flex-wrap gap-2">
                            {['Leve', 'Média', 'Pesada', 'Escudos'].map(type => (
-                               <button key={type} onClick={() => toggleProficiency('armor', type)} className={`text-xs px-3 py-1.5 rounded border transition-colors ${data.proficiencies?.armor?.includes(type) ? 'bg-blue-900/30 border-blue-500/50 text-blue-300' : 'bg-iron-950 border-slate-800 text-slate-500 hover:text-slate-300'}`}>{type}</button>
+                               <button key={type} onClick={() => toggleProficiency('armor', type)} className={`text-xs px-3 py-1.5 rounded border transition-colors ${data.proficiencies?.armor?.includes(type) ? (isSteampunk ? 'bg-amber-900/30 border-amber-500/50 text-amber-200' : 'bg-blue-900/30 border-blue-500/50 text-blue-300') : (isSteampunk ? 'bg-stone-900 border-stone-700 text-stone-400 hover:text-amber-200' : 'bg-iron-950 border-slate-800 text-slate-500 hover:text-slate-300')}`}>{type}</button>
                            ))}
                        </div>
                   </div>
@@ -1273,9 +1340,9 @@ const CharacterSheet: React.FC = () => {
                    </div>
               </div>
 
-              <div className="mt-6 bg-iron-900/30 border border-slate-800 rounded-xl p-4">
-                  <div className="flex justify-between items-center mb-4 border-b border-slate-800/50 pb-2">
-                      <h3 className="flex items-center gap-2 font-display text-slate-300 text-sm"><Star className="w-4 h-4 text-copper-500" /> Talentos (Feats)</h3>
+              <div className={`mt-6 rounded-xl p-4 ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/30 border border-slate-800'}`}>
+                  <div className={`flex justify-between items-center mb-4 pb-2 border-b ${isSteampunk ? 'border-amber-700/30' : 'border-slate-800/50'}`}>
+                      <h3 className={`flex items-center gap-2 font-display text-sm ${isSteampunk ? 'text-amber-200' : 'text-slate-300'}`}><Star className={`w-4 h-4 ${isSteampunk ? 'text-amber-400' : 'text-copper-500'}`} /> Talentos (Feats)</h3>
                       <div className="flex gap-2">
                            <button onClick={() => handleOpenImporter('feats')} className="bg-iron-800 text-slate-400 p-1 rounded hover:bg-copper-600 hover:text-white transition-colors border border-slate-700"><Download className="w-3 h-3" /></button>
                            <button onClick={handleAddFeat} className="bg-copper-600/20 text-copper-500 p-1 rounded hover:bg-copper-600 hover:text-white transition-colors"><Plus className="w-3 h-3" /></button>
@@ -1285,41 +1352,41 @@ const CharacterSheet: React.FC = () => {
                       {(data.feats || []).map((feat, index) => {
                           const i = index; 
                           return (
-                              <div key={feat.id} className="bg-iron-950/50 border border-slate-800 rounded p-3 text-xs group">
+                              <div key={feat.id} className={`rounded p-3 text-xs group ${isSteampunk ? 'sp-wood-inset' : 'bg-iron-950/50 border border-slate-800'}`}>
                                   <div className="flex justify-between items-center mb-1">
-                                      <input value={feat.name} onChange={(e) => {const f = [...(data.feats || [])]; f[i].name = e.target.value; update('feats', f)}} className="bg-transparent font-bold text-slate-200 w-full focus:outline-none" placeholder="Nome do Talento" />
+                                      <input value={feat.name} onChange={(e) => {const f = [...(data.feats || [])]; f[i].name = e.target.value; update('feats', f)}} className={`bg-transparent font-bold w-full focus:outline-none ${isSteampunk ? 'text-amber-100' : 'text-slate-200'}`} placeholder="Nome do Talento" />
                                       <div className="flex items-center gap-2 shrink-0">
-                                          <span className="text-[9px] text-slate-600 uppercase tracking-wide">{feat.source}</span>
-                                          <button onClick={() => handleDeleteFeat(feat.id)} className="text-slate-700 hover:text-red-500"><Trash2 className="w-3.5 h-3.5"/></button>
+                                          <span className={`text-[9px] uppercase tracking-wide ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`}>{feat.source}</span>
+                                          <button onClick={() => handleDeleteFeat(feat.id)} className={`${isSteampunk ? 'text-stone-600 hover:text-red-400' : 'text-slate-700 hover:text-red-500'}`}><Trash2 className="w-3.5 h-3.5"/></button>
                                       </div>
                                   </div>
-                                  <textarea value={feat.description} onChange={(e) => {const f = [...(data.feats || [])]; f[i].description = e.target.value; update('feats', f)}} className="w-full bg-transparent text-slate-400 focus:text-slate-300 focus:outline-none resize-none min-h-[40px] border-l-2 border-slate-800 pl-2" placeholder="Descrição..." />
+                                  <textarea value={feat.description} onChange={(e) => {const f = [...(data.feats || [])]; f[i].description = e.target.value; update('feats', f)}} className={`w-full bg-transparent focus:outline-none resize-none min-h-[40px] border-l-2 pl-2 ${isSteampunk ? 'text-stone-400 focus:text-amber-100 border-amber-800/50' : 'text-slate-400 focus:text-slate-300 border-slate-800'}`} placeholder="Descrição..." />
                               </div>
                           )
                       })}
-                      {(!data.feats || data.feats.length === 0) && <div className="text-center text-slate-600 text-xs italic py-4">Nenhum talento adicionado.</div>}
+                      {(!data.feats || data.feats.length === 0) && <div className={`text-center text-xs italic py-4 ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`}>Nenhum talento adicionado.</div>}
                   </div>
               </div>
           </div>
 
           <div className="lg:col-span-5 xl:col-span-4 space-y-6">
-              <div className="bg-iron-900/30 border border-slate-800/60 rounded-xl p-5">
-                   <h3 className="flex items-center gap-2 font-display text-slate-200 mb-4 pb-2 border-b border-slate-800"><Swords className="w-4 h-4 text-copper-500" /> Ações</h3>
+              <div className={`rounded-xl p-5 ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/30 border border-slate-800/60'}`}>
+                   <h3 className={`flex items-center gap-2 font-display mb-4 pb-2 border-b ${isSteampunk ? 'text-amber-100 border-amber-700/30' : 'text-slate-200 border-slate-800'}`}><Swords className={`w-4 h-4 ${isSteampunk ? 'text-amber-400' : 'text-copper-500'}`} /> Ações</h3>
                    <div className="space-y-2">
                        {calculatedStats.attacks.map((atk, i) => (
-                           <div key={i} className="bg-iron-950/80 border border-slate-700 rounded p-3 flex justify-between items-center hover:border-copper-500/50 transition-all group">
+                           <div key={i} className={`rounded p-3 flex justify-between items-center transition-all group ${isSteampunk ? 'sp-wood-inset hover:brightness-110' : 'bg-iron-950/80 border border-slate-700 hover:border-copper-500/50'}`}>
                                <div>
-                                   <div className="font-bold text-slate-200 text-sm group-hover:text-white">{atk.name}</div>
-                                   <div className="text-[10px] text-slate-500 uppercase font-bold">{atk.type}</div>
+                                   <div className={`font-bold text-sm group-hover:text-white ${isSteampunk ? 'text-amber-100' : 'text-slate-200'}`}>{atk.name}</div>
+                                   <div className={`text-[10px] uppercase font-bold ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>{atk.type}</div>
                                </div>
                                <div className="flex gap-2 text-right">
                                    <div className="text-center">
-                                       <div className="text-[9px] text-slate-600 uppercase font-bold">Atq</div>
-                                       <div className={`text-sm font-bold ${atk.isProficient ? 'text-copper-400' : 'text-slate-400'}`}>{atk.bonus}</div>
+                                       <div className={`text-[9px] uppercase font-bold ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`}>Atq</div>
+                                       <div className={`text-sm font-bold ${atk.isProficient ? (isSteampunk ? 'text-amber-400' : 'text-copper-400') : (isSteampunk ? 'text-stone-400' : 'text-slate-400')}`}>{atk.bonus}</div>
                                    </div>
                                    <div className="text-center w-16">
-                                       <div className="text-[9px] text-slate-600 uppercase font-bold">Dano</div>
-                                       <div className="text-sm font-bold text-slate-200">{atk.damage}</div>
+                                       <div className={`text-[9px] uppercase font-bold ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`}>Dano</div>
+                                       <div className={`text-sm font-bold ${isSteampunk ? 'text-amber-100' : 'text-slate-200'}`}>{atk.damage}</div>
                                    </div>
                                </div>
                            </div>
@@ -1327,33 +1394,33 @@ const CharacterSheet: React.FC = () => {
                    </div>
               </div>
 
-              <div className="bg-iron-900/30 border border-slate-800/60 rounded-xl p-5">
+              <div className={`rounded-xl p-5 ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/30 border border-slate-800/60'}`}>
                    <div className="flex justify-between items-center mb-4">
-                       <h3 className="flex items-center gap-2 font-display text-slate-200"><Box className="w-4 h-4 text-copper-500" /> Inventário & Habilidades</h3>
+                       <h3 className={`flex items-center gap-2 font-display ${isSteampunk ? 'text-amber-100' : 'text-slate-200'}`}><Box className={`w-4 h-4 ${isSteampunk ? 'text-amber-400' : 'text-copper-500'}`} /> Inventário & Habilidades</h3>
                        <div className="flex gap-2">
-                           <button onClick={() => handleOpenImporter('armor')} className="bg-iron-800 text-slate-400 p-1 rounded hover:bg-copper-600 hover:text-white transition-colors border border-slate-700" title="Importar Equipamento"><Download className="w-4 h-4" /></button>
-                           <button onClick={handleAddItem} className="bg-copper-600/20 text-copper-500 p-1 rounded hover:bg-copper-600 hover:text-white transition-colors" title="Adicionar Item"><Plus className="w-4 h-4" /></button>
+                           <button onClick={() => handleOpenImporter('armor')} className={`p-1 rounded transition-colors border ${isSteampunk ? 'bg-stone-800 text-stone-400 border-stone-600 hover:bg-amber-700 hover:text-white' : 'bg-iron-800 text-slate-400 border-slate-700 hover:bg-copper-600 hover:text-white'}`} title="Importar Equipamento"><Download className="w-4 h-4" /></button>
+                           <button onClick={handleAddItem} className={`p-1 rounded transition-colors ${isSteampunk ? 'bg-amber-700/20 text-amber-500 hover:bg-amber-700 hover:text-white' : 'bg-copper-600/20 text-copper-500 hover:bg-copper-600 hover:text-white'}`} title="Adicionar Item"><Plus className="w-4 h-4" /></button>
                        </div>
                    </div>
 
-                   <div className="flex border-b border-slate-800 mb-4">
-                       <button onClick={() => setActiveTab('combat')} className={`flex-1 py-2 text-xs font-bold uppercase transition-colors ${activeTab === 'combat' ? 'text-copper-400 border-b-2 border-copper-500' : 'text-slate-500 hover:text-slate-300'}`}>Combate</button>
-                       <button onClick={() => setActiveTab('items')} className={`flex-1 py-2 text-xs font-bold uppercase transition-colors ${activeTab === 'items' ? 'text-copper-400 border-b-2 border-copper-500' : 'text-slate-500 hover:text-slate-300'}`}>Mochila</button>
-                       <button onClick={() => setActiveTab('features')} className={`flex-1 py-2 text-xs font-bold uppercase transition-colors ${activeTab === 'features' ? 'text-copper-400 border-b-2 border-copper-500' : 'text-slate-500 hover:text-slate-300'}`}>Habilidades</button>
+                   <div className={`flex border-b mb-4 ${isSteampunk ? 'border-amber-800/30' : 'border-slate-800'}`}>
+                       <button onClick={() => setActiveTab('combat')} className={`flex-1 py-2 text-xs font-bold uppercase transition-colors ${activeTab === 'combat' ? (isSteampunk ? 'text-amber-400 border-b-2 border-amber-500' : 'text-copper-400 border-b-2 border-copper-500') : (isSteampunk ? 'text-stone-500 hover:text-stone-300' : 'text-slate-500 hover:text-slate-300')}`}>Combate</button>
+                       <button onClick={() => setActiveTab('items')} className={`flex-1 py-2 text-xs font-bold uppercase transition-colors ${activeTab === 'items' ? (isSteampunk ? 'text-amber-400 border-b-2 border-amber-500' : 'text-copper-400 border-b-2 border-copper-500') : (isSteampunk ? 'text-stone-500 hover:text-stone-300' : 'text-slate-500 hover:text-slate-300')}`}>Mochila</button>
+                       <button onClick={() => setActiveTab('features')} className={`flex-1 py-2 text-xs font-bold uppercase transition-colors ${activeTab === 'features' ? (isSteampunk ? 'text-amber-400 border-b-2 border-amber-500' : 'text-copper-400 border-b-2 border-copper-500') : (isSteampunk ? 'text-stone-500 hover:text-stone-300' : 'text-slate-500 hover:text-slate-300')}`}>Habilidades</button>
                    </div>
                    
                    {activeTab !== 'features' && (
-                       <div className="flex items-center gap-2 mb-4 bg-iron-950 p-2 rounded border border-slate-800">
-                            <div className="flex flex-col items-center justify-center px-3 border-r border-slate-800 min-w-[90px]">
-                                <ChevronDown className={`w-4 h-4 mb-0.5 ${isOverloaded ? 'text-red-500' : 'text-slate-500'}`} />
-                                <div className={`text-xs font-bold ${isOverloaded ? 'text-red-400' : 'text-slate-200'}`}>{totalWeight.toFixed(1)} <span className="text-slate-600">/</span> {maxCapacity}</div>
+                       <div className={`flex items-center gap-2 mb-4 p-2 rounded ${isSteampunk ? 'sp-wood-inset' : 'bg-iron-950 border border-slate-800'}`}>
+                            <div className={`flex flex-col items-center justify-center px-3 border-r min-w-[90px] ${isSteampunk ? 'border-amber-800/30' : 'border-slate-800'}`}>
+                                <ChevronDown className={`w-4 h-4 mb-0.5 ${isOverloaded ? 'text-red-500' : (isSteampunk ? 'text-stone-500' : 'text-slate-500')}`} />
+                                <div className={`text-xs font-bold ${isOverloaded ? 'text-red-400' : (isSteampunk ? 'text-amber-100' : 'text-slate-200')}`}>{totalWeight.toFixed(1)} <span className={isSteampunk ? 'text-stone-600' : 'text-slate-600'}>/</span> {maxCapacity}</div>
                             </div>
                             <div className="flex-1 grid grid-cols-5 gap-1.5">
                                 {['pp', 'ep', 'gp', 'sp', 'cp'].map(coin => (
                                     <div key={coin} className="flex flex-col items-center justify-center">
-                                        <span className={`text-[9px] font-bold uppercase mb-0.5 text-slate-500`}>{coin.toUpperCase()}</span>
+                                        <span className={`text-[9px] font-bold uppercase mb-0.5 ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>{coin.toUpperCase()}</span>
                                         {/* @ts-ignore */}
-                                        <input value={data.currency?.[coin] || "0"} onChange={(e) => update(`currency.${coin}`, e.target.value)} className="w-full bg-transparent text-center font-mono text-[10px] text-slate-200 focus:outline-none bg-white/5 rounded py-0.5" />
+                                        <input value={data.currency?.[coin] || "0"} onChange={(e) => update(`currency.${coin}`, e.target.value)} className={`w-full bg-transparent text-center font-mono text-[10px] focus:outline-none rounded py-0.5 ${isSteampunk ? 'text-amber-100 bg-amber-900/10' : 'text-slate-200 bg-white/5'}`} />
                                     </div>
                                 ))}
                             </div>
@@ -1369,15 +1436,15 @@ const CharacterSheet: React.FC = () => {
                             .map((item, originalIdx) => {
                                 const idx = data.inventory.findIndex(i => i.id === item.id);
                                 return (
-                                   <div key={item.id} className="bg-iron-950/50 border border-slate-800 rounded p-3 text-xs group">
+                                   <div key={item.id} className={`rounded p-3 text-xs group ${isSteampunk ? 'sp-wood-inset' : 'bg-iron-950/50 border border-slate-800'}`}>
                                        <div className="flex justify-between items-start mb-2 gap-2">
                                            <div className="flex items-center gap-2 flex-1 min-w-0">
                                                {activeTab === 'combat' ? (
-                                                    <button onClick={() => handleEquipToggle(item.id)} className={`p-1.5 rounded shrink-0 transition-all ${item.equipped ? 'text-copper-400 bg-copper-900/20 ring-1 ring-copper-500/30' : 'text-slate-600 hover:text-slate-400'}`}>
+                                                    <button onClick={() => handleEquipToggle(item.id)} className={`p-1.5 rounded shrink-0 transition-all ${item.equipped ? (isSteampunk ? 'text-amber-400 bg-amber-900/30 ring-1 ring-amber-500/30' : 'text-copper-400 bg-copper-900/20 ring-1 ring-copper-500/30') : (isSteampunk ? 'text-stone-600 hover:text-stone-400' : 'text-slate-600 hover:text-slate-400')}`}>
                                                         {item.type === 'weapon' ? <Swords className="w-3.5 h-3.5"/> : item.type === 'armor' ? <Shield className="w-3.5 h-3.5"/> : <Box className="w-3.5 h-3.5"/>}
                                                     </button>
-                                               ) : (<div className="p-1.5 text-slate-600"><Box className="w-3.5 h-3.5" /></div>)}
-                                               <input value={item.name} onChange={(e) => { const inv = [...data.inventory]; inv[idx].name = e.target.value; update('inventory', inv); }} className={`bg-transparent font-bold w-full focus:outline-none min-w-0 flex-1 ${item.equipped ? 'text-slate-200' : 'text-slate-500'}`} />
+                                               ) : (<div className={`p-1.5 ${isSteampunk ? 'text-stone-600' : 'text-slate-600'}`}><Box className="w-3.5 h-3.5" /></div>)}
+                                               <input value={item.name} onChange={(e) => { const inv = [...data.inventory]; inv[idx].name = e.target.value; update('inventory', inv); }} className={`bg-transparent font-bold w-full focus:outline-none min-w-0 flex-1 ${item.equipped ? (isSteampunk ? 'text-amber-100' : 'text-slate-200') : (isSteampunk ? 'text-stone-500' : 'text-slate-500')}`} />
                                            </div>
                                            <div className="flex items-center bg-iron-900 rounded px-1.5 py-0.5 border border-slate-800 shrink-0">
                                                 <input value={item.weight || ""} onChange={(e) => {const i=[...data.inventory]; i[idx].weight=e.target.value; update('inventory', i)}} className="bg-transparent w-8 text-right text-[10px] text-slate-400 focus:outline-none focus:text-slate-200" placeholder="0" />
@@ -1452,65 +1519,65 @@ const CharacterSheet: React.FC = () => {
                         {activeTab === 'features' && (
                             <div className="space-y-4">
                                 {(data.classFeatures || []).sort((a,b) => a.level - b.level).map((feature, idx) => (
-                                    <div key={idx} onClick={() => setViewingFeature(feature)} className="bg-iron-950/50 border border-slate-800 rounded p-3 text-xs flex gap-3 hover:bg-white/5 cursor-pointer transition-colors group">
-                                        <div className="flex flex-col items-center justify-center p-2 bg-iron-900 rounded border border-slate-800 h-fit group-hover:border-slate-600 transition-colors">
-                                            <span className="text-[9px] text-slate-500 font-bold uppercase">Nível</span>
-                                            <span className="text-lg font-display text-copper-500">{feature.level}</span>
+                                    <div key={idx} onClick={() => setViewingFeature(feature)} className={`rounded p-3 text-xs flex gap-3 cursor-pointer transition-colors group ${isSteampunk ? 'sp-bronze-plate sp-rivets hover:brightness-110' : 'bg-iron-950/50 border border-slate-800 hover:bg-white/5'}`}>
+                                        <div className={`flex flex-col items-center justify-center p-2 rounded h-fit transition-colors ${isSteampunk ? 'sp-wood-inset group-hover:border-amber-700' : 'bg-iron-900 border border-slate-800 group-hover:border-slate-600'}`}>
+                                            <span className={`text-[9px] font-bold uppercase ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>Nível</span>
+                                            <span className={`text-lg font-display ${isSteampunk ? 'text-amber-400' : 'text-copper-500'}`}>{feature.level}</span>
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex justify-between items-start">
-                                                <div className="font-bold text-slate-200 text-sm mb-1 group-hover:text-copper-400">{feature.name}</div>
-                                                <Info className="w-3 h-3 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                <div className={`font-bold text-sm mb-1 ${isSteampunk ? 'text-amber-100 group-hover:text-amber-300' : 'text-slate-200 group-hover:text-copper-400'}`}>{feature.name}</div>
+                                                <Info className={`w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`} />
                                             </div>
-                                            <div className="text-slate-500 leading-relaxed line-clamp-2">{feature.description || "Clique para ver detalhes."}</div>
+                                            <div className={`leading-relaxed line-clamp-2 ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>{feature.description || "Clique para ver detalhes."}</div>
                                         </div>
                                     </div>
                                 ))}
-                                {data.classFeatures.length === 0 && <div className="text-center text-slate-500 italic py-8">Nenhuma habilidade de classe registrada. Use o botão de Importar Classe para carregar.</div>}
+                                {data.classFeatures.length === 0 && <div className={`text-center italic py-8 ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>Nenhuma habilidade de classe registrada. Use o botão de Importar Classe para carregar.</div>}
                             </div>
                         )}
                    </div>
               </div>
 
-              <div className="bg-iron-900/30 border border-slate-800/60 rounded-xl overflow-hidden">
-                   <button onClick={() => setShowSpells(!showSpells)} className="w-full flex items-center justify-between p-4 bg-iron-950/50 hover:bg-iron-900 transition-colors">
-                       <div className="flex items-center gap-2 font-display text-slate-200"><Flame className="w-4 h-4 text-purple-500" /> Grimório</div>
-                       {showSpells ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+              <div className={`rounded-xl overflow-hidden ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/30 border border-slate-800/60'}`}>
+                   <button onClick={() => setShowSpells(!showSpells)} className={`w-full flex items-center justify-between p-4 transition-colors ${isSteampunk ? 'bg-transparent hover:bg-amber-900/20' : 'bg-iron-950/50 hover:bg-iron-900'}`}>
+                       <div className={`flex items-center gap-2 font-display ${isSteampunk ? 'text-amber-200' : 'text-slate-200'}`}><Flame className={`w-4 h-4 ${isSteampunk ? 'text-amber-500' : 'text-purple-500'}`} /> Grimório</div>
+                       {showSpells ? <ChevronUp className={`w-4 h-4 ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`} /> : <ChevronDown className={`w-4 h-4 ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`} />}
                    </button>
                    
                    {showSpells && (
-                       <div className="p-4 border-t border-slate-800">
-                           <div className="grid grid-cols-2 gap-3 mb-6 bg-iron-950/50 p-3 rounded-lg border border-slate-800/50">
+                       <div className={`p-4 border-t ${isSteampunk ? 'border-stone-700/50' : 'border-slate-800'}`}>
+                           <div className={`grid grid-cols-2 gap-3 mb-6 p-3 rounded-lg ${isSteampunk ? 'sp-wood-inset' : 'bg-iron-950/50 border border-slate-800/50'}`}>
                                <div>
-                                   <div className="flex justify-between text-[10px] text-slate-500 uppercase font-bold mb-1">
+                                   <div className={`flex justify-between text-[10px] uppercase font-bold mb-1 ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>
                                        <span>Preparadas</span>
-                                       <span className={magicStats.currentPrepared > magicStats.maxPrepared ? "text-red-500" : "text-slate-400"}>{magicStats.currentPrepared} / {magicStats.maxPrepared}</span>
+                                       <span className={magicStats.currentPrepared > magicStats.maxPrepared ? "text-red-500" : (isSteampunk ? "text-stone-400" : "text-slate-400")}>{magicStats.currentPrepared} / {magicStats.maxPrepared}</span>
                                    </div>
-                                   <div className="h-1.5 bg-iron-900 rounded-full overflow-hidden">
-                                       <div className={`h-full transition-all ${magicStats.currentPrepared > magicStats.maxPrepared ? 'bg-red-500' : 'bg-purple-500'}`} style={{ width: `${Math.min(100, (magicStats.currentPrepared / (magicStats.maxPrepared || 1)) * 100)}%` }} />
+                                   <div className={`h-1.5 rounded-full overflow-hidden ${isSteampunk ? 'bg-stone-800' : 'bg-iron-900'}`}>
+                                       <div className={`h-full transition-all ${magicStats.currentPrepared > magicStats.maxPrepared ? 'bg-red-500' : (isSteampunk ? 'bg-amber-500' : 'bg-purple-500')}`} style={{ width: `${Math.min(100, (magicStats.currentPrepared / (magicStats.maxPrepared || 1)) * 100)}%` }} />
                                    </div>
                                </div>
                                <div>
-                                   <div className="flex justify-between text-[10px] text-slate-500 uppercase font-bold mb-1">
+                                   <div className={`flex justify-between text-[10px] uppercase font-bold mb-1 ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>
                                        <span>Truques</span>
-                                       <span className={magicStats.currentCantrips > magicStats.maxCantrips ? "text-yellow-500" : "text-slate-400"}>{magicStats.currentCantrips} / {magicStats.maxCantrips}</span>
+                                       <span className={magicStats.currentCantrips > magicStats.maxCantrips ? "text-yellow-500" : (isSteampunk ? "text-stone-400" : "text-slate-400")}>{magicStats.currentCantrips} / {magicStats.maxCantrips}</span>
                                    </div>
-                                   <div className="h-1.5 bg-iron-900 rounded-full overflow-hidden">
-                                       <div className={`h-full transition-all ${magicStats.currentCantrips > magicStats.maxCantrips ? 'bg-yellow-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(100, (magicStats.currentCantrips / (magicStats.maxCantrips || 1)) * 100)}%` }} />
+                                   <div className={`h-1.5 rounded-full overflow-hidden ${isSteampunk ? 'bg-stone-800' : 'bg-iron-900'}`}>
+                                       <div className={`h-full transition-all ${magicStats.currentCantrips > magicStats.maxCantrips ? 'bg-yellow-500' : (isSteampunk ? 'bg-cyan-500' : 'bg-blue-500')}`} style={{ width: `${Math.min(100, (magicStats.currentCantrips / (magicStats.maxCantrips || 1)) * 100)}%` }} />
                                    </div>
                                </div>
                            </div>
 
-                           <div className="flex justify-between text-center mb-4 text-xs bg-iron-950/50 p-2 rounded">
-                               <div><div className="text-slate-500 font-bold">ATQ</div><div className="text-slate-200">{data.magic.attackBonus}</div></div>
-                               <div><div className="text-slate-500 font-bold">CD</div><div className="text-slate-200">{data.magic.saveDC}</div></div>
-                               <div><div className="text-slate-500 font-bold">HAB</div><div className="text-copper-400">{data.magic.ability}</div></div>
-                               <div><div className="text-slate-500 font-bold">NV. CONJ.</div><div className="text-emerald-400">{magicStats.casterLevel}</div></div>
+                           <div className={`flex justify-between text-center mb-4 text-xs p-2 rounded ${isSteampunk ? 'bg-stone-900/50' : 'bg-iron-950/50'}`}>
+                               <div><div className={`font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>ATQ</div><div className={isSteampunk ? 'text-amber-100' : 'text-slate-200'}>{data.magic.attackBonus}</div></div>
+                               <div><div className={`font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>CD</div><div className={isSteampunk ? 'text-amber-100' : 'text-slate-200'}>{data.magic.saveDC}</div></div>
+                               <div><div className={`font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>HAB</div><div className={isSteampunk ? 'text-amber-400' : 'text-copper-400'}>{data.magic.ability}</div></div>
+                               <div><div className={`font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>NV. CONJ.</div><div className={isSteampunk ? 'text-emerald-300' : 'text-emerald-400'}>{magicStats.casterLevel}</div></div>
                            </div>
 
                            <div className="flex gap-2 mb-6">
-                               <button onClick={() => handleOpenImporter('spells')} className="flex-1 py-3 bg-purple-900/30 text-purple-300 border border-purple-800 hover:bg-purple-800/50 rounded flex items-center justify-center gap-2 font-bold transition-all hover:shadow-lg hover:shadow-purple-900/20 text-xs"><Globe className="w-4 h-4" /> Buscar</button>
-                               <button onClick={() => handleOpenImporter('class-spells')} className="flex-1 py-3 bg-iron-800 text-slate-300 border border-slate-700 hover:bg-iron-700 rounded flex items-center justify-center gap-2 font-bold transition-all hover:text-white text-xs"><ListChecks className="w-4 h-4" /> Lista da Classe</button>
+                               <button onClick={() => handleOpenImporter('spells')} className={`flex-1 py-3 border rounded flex items-center justify-center gap-2 font-bold transition-all text-xs ${isSteampunk ? 'bg-amber-900/30 text-amber-200 border-amber-700 hover:bg-amber-800/50 hover:shadow-lg hover:shadow-amber-900/20' : 'bg-purple-900/30 text-purple-300 border-purple-800 hover:bg-purple-800/50 hover:shadow-lg hover:shadow-purple-900/20'}`}><Globe className="w-4 h-4" /> Buscar</button>
+                               <button onClick={() => handleOpenImporter('class-spells')} className={`flex-1 py-3 border rounded flex items-center justify-center gap-2 font-bold transition-all text-xs ${isSteampunk ? 'bg-stone-800 text-stone-300 border-stone-600 hover:bg-stone-700 hover:text-amber-100' : 'bg-iron-800 text-slate-300 border-slate-700 hover:bg-iron-700 hover:text-white'}`}><ListChecks className="w-4 h-4" /> Lista da Classe</button>
                            </div>
                            
                            <div className="space-y-4">
@@ -1519,31 +1586,31 @@ const CharacterSheet: React.FC = () => {
                                    const displayTotal = autoTotal > 0 ? autoTotal : slot.total; 
                                    
                                    return (
-                                   <div key={lvl} className="bg-iron-950/30 rounded border border-slate-800/50 p-2">
+                                   <div key={lvl} className={`rounded border p-2 ${isSteampunk ? 'bg-stone-900/30 border-stone-700/50' : 'bg-iron-950/30 border-slate-800/50'}`}>
                                         <div className="flex justify-between items-center mb-2">
-                                            <span className="text-[10px] font-bold text-purple-400 uppercase">{lvl === 0 ? 'Truques' : `Nv ${lvl}`}</span>
+                                            <span className={`text-[10px] font-bold uppercase ${isSteampunk ? 'text-amber-400' : 'text-purple-400'}`}>{lvl === 0 ? 'Truques' : `Nv ${lvl}`}</span>
                                             {lvl > 0 && (
                                                 <div className="flex items-center gap-1 text-[10px]">
-                                                    <input value={slot.used} onChange={(e) => {const s=[...data.magic.slots]; s[lvl].used=e.target.value; update('magic.slots', s)}} className="w-6 text-center bg-iron-900 border border-slate-700 text-white rounded focus:border-purple-500 outline-none" />
-                                                    <span className="text-slate-600">/</span>
-                                                    <div className="w-6 text-center bg-transparent text-slate-500 font-mono relative group">{displayTotal}{autoTotal > 0 && <Lock className="w-2 h-2 absolute top-0 right-0 text-slate-700 opacity-50" />}</div>
+                                                    <input value={slot.used} onChange={(e) => {const s=[...data.magic.slots]; s[lvl].used=e.target.value; update('magic.slots', s)}} className={`w-6 text-center border rounded outline-none ${isSteampunk ? 'bg-stone-900 border-stone-600 text-amber-100 focus:border-amber-500' : 'bg-iron-900 border-slate-700 text-white focus:border-purple-500'}`} />
+                                                    <span className={isSteampunk ? 'text-stone-500' : 'text-slate-600'}>/</span>
+                                                    <div className={`w-6 text-center bg-transparent font-mono relative group ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>{displayTotal}{autoTotal > 0 && <Lock className={`w-2 h-2 absolute top-0 right-0 opacity-50 ${isSteampunk ? 'text-stone-600' : 'text-slate-700'}`} />}</div>
                                                 </div>
                                             )}
                                         </div>
                                         <div className="space-y-1">
                                             {data.magic.spells[lvl]?.map((spell, i) => (
-                                                <div key={i} className="hover:bg-white/5 rounded transition-all duration-300 border border-transparent hover:border-slate-800">
+                                                <div key={i} className={`hover:bg-white/5 rounded transition-all duration-300 border border-transparent ${isSteampunk ? 'hover:border-stone-700' : 'hover:border-slate-800'}`}>
                                                     <div className="flex items-center gap-2 p-1.5 cursor-pointer" onClick={() => setViewingSpell(spell)}>
-                                                        <div onClick={(e) => e.stopPropagation()}><DiamondToggle checked={spell.prepared} onChange={(c) => {const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl][i].prepared=c; update('magic.spells', s)}} theme={{bg:'bg-purple-500', border:'border-purple-500'}} size="sm" /></div>
+                                                        <div onClick={(e) => e.stopPropagation()}><DynamicToggle checked={spell.prepared} onChange={(c) => {const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl][i].prepared=c; update('magic.spells', s)}} theme={{bg: isSteampunk ? 'bg-amber-500' : 'bg-purple-500', border: isSteampunk ? 'border-amber-500' : 'border-purple-500'}} size="sm" isSteampunk={isSteampunk} /></div>
                                                         <div className="flex-1 flex items-center justify-between">
-                                                            <input value={spell.name} onChange={(e) => {const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl][i].name=e.target.value; update('magic.spells', s)}} className={`bg-transparent w-full text-xs focus:outline-none cursor-pointer ${spell.prepared ? 'text-slate-200 font-medium' : 'text-slate-500'}`} placeholder="Magia..." onClick={(e) => e.stopPropagation()} />
-                                                            <div className="flex items-center gap-2">{spell.school && <span className="text-[9px] text-slate-600 uppercase">{spell.school.substring(0,3)}</span>}<BookOpen className="w-3 h-3 text-slate-600 hover:text-purple-400" /></div>
+                                                            <input value={spell.name} onChange={(e) => {const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl][i].name=e.target.value; update('magic.spells', s)}} className={`bg-transparent w-full text-xs focus:outline-none cursor-pointer ${spell.prepared ? (isSteampunk ? 'text-amber-100 font-medium' : 'text-slate-200 font-medium') : (isSteampunk ? 'text-stone-500' : 'text-slate-500')}`} placeholder="Magia..." onClick={(e) => e.stopPropagation()} />
+                                                            <div className="flex items-center gap-2">{spell.school && <span className={`text-[9px] uppercase ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`}>{spell.school.substring(0,3)}</span>}<BookOpen className={`w-3 h-3 ${isSteampunk ? 'text-stone-500 hover:text-amber-400' : 'text-slate-600 hover:text-purple-400'}`} /></div>
                                                         </div>
-                                                        <button onClick={(e) => {e.stopPropagation(); const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl].splice(i,1); update('magic.spells', s)}} className="opacity-20 hover:opacity-100 text-slate-700 hover:text-red-500"><Trash2 className="w-3 h-3"/></button>
+                                                        <button onClick={(e) => {e.stopPropagation(); const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl].splice(i,1); update('magic.spells', s)}} className={`opacity-20 hover:opacity-100 hover:text-red-500 ${isSteampunk ? 'text-stone-600' : 'text-slate-700'}`}><Trash2 className="w-3 h-3"/></button>
                                                     </div>
                                                 </div>
                                             ))}
-                                            <button onClick={() => {const s=JSON.parse(JSON.stringify(data.magic.spells)); if(!s[lvl]) s[lvl]=[]; s[lvl].push({id: Math.random().toString(36), name:"", prepared:false, level: lvl}); update('magic.spells', s)}} className="text-[10px] text-slate-600 hover:text-purple-400 flex items-center gap-1 mt-2 pl-2"><Plus className="w-3 h-3" /> Manual</button>
+                                            <button onClick={() => {const s=JSON.parse(JSON.stringify(data.magic.spells)); if(!s[lvl]) s[lvl]=[]; s[lvl].push({id: Math.random().toString(36), name:"", prepared:false, level: lvl}); update('magic.spells', s)}} className={`text-[10px] flex items-center gap-1 mt-2 pl-2 ${isSteampunk ? 'text-stone-500 hover:text-amber-400' : 'text-slate-600 hover:text-purple-400'}`}><Plus className="w-3 h-3" /> Manual</button>
                                         </div>
                                    </div>
                                )})}
