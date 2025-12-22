@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Save, Shield, Heart, Zap, Swords, Scroll, ChevronDown, ChevronUp, Flame, Trash2, Plus, AlertTriangle, Globe, BookOpen, X, Download, Star, Box, Activity, ArrowUpCircle, Info, ListChecks, Lock, Loader2 } from 'lucide-react';
+import { Save, Shield, Heart, Zap, Swords, Scroll, ChevronDown, ChevronUp, Flame as FlameIcon, Trash2, Plus, AlertTriangle, Globe, BookOpen, X, Download, Star, Box, Activity, ArrowUpCircle, Info, ListChecks, Lock, Loader2 } from 'lucide-react';
 import WikidotImporter from './WikidotImporter';
 import { fetchWithFallback, parseSpellPage, slugifySpell } from '../utils/wikidot';
 import { useTheme } from '../themes/ThemeContext';
 import { Gear } from './steampunk/Gear';
+import { Flame as WildfireFlame } from './wildfire/Flame';
 
 type ItemType = 'weapon' | 'armor' | 'shield' | 'misc';
 
@@ -122,6 +123,74 @@ interface CharacterSheetData {
   };
 }
 
+// Sistema de estilos temáticos
+type ThemeStyleId = 'default' | 'steampunk' | 'wildfire';
+
+const getThemeStyleId = (themeId?: string): ThemeStyleId => {
+  if (themeId === 'steampunk-victorian') return 'steampunk';
+  if (themeId === 'wildfire-primal') return 'wildfire';
+  return 'default';
+};
+
+const THEME_STYLES = {
+  default: {
+    panel: 'bg-iron-900/50 border border-slate-800/50',
+    panelSolid: 'bg-iron-900 border border-slate-800',
+    header: 'text-slate-300',
+    headerAccent: 'text-copper-400',
+    text: 'text-slate-300',
+    textMuted: 'text-slate-400',
+    textDim: 'text-slate-500',
+    input: 'bg-iron-950 border border-slate-700 text-slate-200 focus:border-copper-500',
+    border: 'border-slate-800',
+    borderAccent: 'border-copper-500',
+    accent: 'text-copper-500',
+    accentBg: 'bg-copper-600',
+    divider: 'bg-slate-800/50',
+    highlight: 'bg-iron-950/30 border-slate-800/50',
+    highlightActive: 'bg-copper-900/20 border-copper-700/30',
+    button: 'bg-iron-950 text-slate-400 hover:text-copper-400 border-slate-700',
+    buttonActive: 'bg-copper-600 text-white',
+  },
+  steampunk: {
+    panel: 'sp-bronze-plate sp-rivets',
+    panelSolid: 'sp-bronze-plate sp-rivets',
+    header: 'text-amber-200',
+    headerAccent: 'text-amber-400',
+    text: 'text-amber-100',
+    textMuted: 'text-stone-400',
+    textDim: 'text-stone-500',
+    input: 'sp-input',
+    border: 'border-amber-800/30',
+    borderAccent: 'border-amber-500',
+    accent: 'text-amber-500',
+    accentBg: 'bg-amber-700',
+    divider: 'bg-amber-800/30',
+    highlight: 'bg-stone-900/30 border-stone-700/30',
+    highlightActive: 'bg-amber-900/20 border-amber-700/30',
+    button: 'bg-stone-900 text-stone-400 hover:text-amber-400 border-stone-700',
+    buttonActive: 'bg-amber-700 text-white',
+  },
+  wildfire: {
+    panel: 'wf-charred-wood wf-ember-glow',
+    panelSolid: 'wf-charred-wood',
+    header: 'text-orange-200 font-uncial',
+    headerAccent: 'text-orange-400',
+    text: 'text-orange-100',
+    textMuted: 'text-orange-200/70',
+    textDim: 'text-orange-300/50',
+    input: 'wf-input',
+    border: 'border-orange-900/40',
+    borderAccent: 'border-orange-500',
+    accent: 'text-orange-400',
+    accentBg: 'bg-gradient-to-r from-orange-700 to-red-700',
+    divider: 'bg-gradient-to-r from-transparent via-orange-800/40 to-transparent',
+    highlight: 'wf-charred-wood',
+    highlightActive: 'wf-charred-wood border border-orange-600/50',
+    button: 'wf-stone-circle text-orange-300/70 hover:text-orange-300 border-transparent',
+    buttonActive: 'bg-gradient-to-r from-orange-700 to-red-700 text-white',
+  }
+};
 const DEFAULT_DATA: CharacterSheetData = {
   info: {
     name: "Novo Personagem",
@@ -235,8 +304,9 @@ const upgradeDie = (damage: string, properties: string[] = []) => {
 const normalizeKey = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
 
 // Toggle dinamico que muda baseado no tema
-const DynamicToggle = ({ checked, onChange, theme, size = "md", isSteampunk = false }: { checked: boolean, onChange: (v: boolean) => void, theme: any, size?: "sm"|"md", isSteampunk?: boolean }) => {
+const DynamicToggle = ({ checked, onChange, theme, size = "md", isSteampunk = false, isWildfire = false }: { checked: boolean, onChange: (v: boolean) => void, theme: any, size?: "sm"|"md", isSteampunk?: boolean, isWildfire?: boolean }) => {
     const gearSize = size === "sm" ? 20 : 28;
+    const flameSize = size === "sm" ? 18 : 24;
     
     if (isSteampunk) {
         return (
@@ -252,6 +322,24 @@ const DynamicToggle = ({ checked, onChange, theme, size = "md", isSteampunk = fa
                     active={checked}
                     speed="slow"
                     style="small"
+                />
+            </button>
+        );
+    }
+    
+    // Toggle de fogo para Wildfire
+    if (isWildfire) {
+        return (
+            <button 
+                onClick={() => onChange(!checked)}
+                className={`wf-flame-toggle ${checked ? 'active' : 'inactive'} outline-none focus:outline-none transition-all hover:scale-110`}
+                style={{ width: flameSize, height: flameSize }}
+            >
+                <WildfireFlame
+                    size={flameSize}
+                    active={checked}
+                    color="ember"
+                    intensity="medium"
                 />
             </button>
         );
@@ -288,7 +376,7 @@ const DiamondToggle = ({ checked, onChange, theme, size = "md" }: { checked: boo
     );
 };
 
-const AttributeBlock = React.memo(({ config, data, update, isSteampunk = false }: { config: any, data: CharacterSheetData, update: any, isSteampunk?: boolean }) => {
+const AttributeBlock = React.memo(({ config, data, update, isSteampunk = false, isWildfire = false }: { config: any, data: CharacterSheetData, update: any, isSteampunk?: boolean, isWildfire?: boolean }) => {
     if (!data?.stats) return null;
     const attrKey = config.key as keyof CharacterSheetData['stats'];
     const score = data.stats[attrKey] ?? 10;
@@ -300,21 +388,35 @@ const AttributeBlock = React.memo(({ config, data, update, isSteampunk = false }
     // Classes condicionais baseadas no tema
     const panelClass = isSteampunk 
         ? "sp-bronze-plate sp-rivets overflow-hidden flex flex-col h-full group transition-all p-1"
+        : isWildfire
+        ? "wf-charred-wood wf-ember-glow overflow-hidden flex flex-col h-full group transition-all rounded-xl"
         : "bg-iron-900/60 border border-slate-800/80 rounded-xl overflow-hidden flex flex-col h-full group transition-all hover:border-slate-700/80 hover:shadow-lg hover:shadow-black/20";
     
     const headerClass = isSteampunk
         ? "relative p-3 pb-2 flex items-center justify-between bg-gradient-to-b from-amber-900/20 to-transparent"
+        : isWildfire
+        ? "relative p-3 pb-2 flex items-center justify-between bg-gradient-to-b from-orange-900/15 to-transparent"
         : "relative p-3 pb-2 flex items-center justify-between bg-gradient-to-b from-iron-800/40 to-transparent";
     
     const inputClass = isSteampunk
         ? "sp-input w-10 text-center text-[10px]"
+        : isWildfire
+        ? "wf-input w-10 text-center text-[10px]"
         : "bg-iron-950/50 border border-slate-800 rounded w-10 text-center text-[10px] text-slate-500 focus:outline-none focus:text-slate-200 focus:border-slate-600 transition-colors";
+
+    const labelClass = isSteampunk ? 'text-amber-200' : isWildfire ? 'text-orange-200' : config.theme.text;
+    const modClass = isSteampunk ? 'text-amber-100' : isWildfire ? 'text-orange-100' : config.theme.text;
+    const saveActiveClass = isSteampunk ? 'bg-amber-900/20 border-amber-700/30' : isWildfire ? 'wf-stone-circle border-orange-600/50' : `bg-${config.key === 'cha' || config.key === 'str' ? 'white' : 'black'}/5 ${config.theme.border} border-opacity-30`;
+    const saveInactiveClass = isSteampunk ? 'bg-stone-900/30 border-stone-700/30' : isWildfire ? 'bg-[#0d0805]/50 border-orange-900/30 rounded-lg' : 'bg-iron-950/30 border-slate-800/50';
+    const saveTextActive = isSteampunk ? 'text-amber-100' : isWildfire ? 'text-orange-100' : 'text-slate-200';
+    const saveTextInactive = isSteampunk ? 'text-stone-400' : isWildfire ? 'text-orange-300/50' : 'text-slate-500';
+    const dividerClass = isSteampunk ? 'bg-amber-800/30' : isWildfire ? 'bg-gradient-to-r from-transparent via-orange-800/30 to-transparent' : 'bg-slate-800/50';
 
     return (
         <div className={panelClass}>
             <div className={headerClass}>
                 <div className="flex flex-col z-10">
-                    <span className={`text-[10px] uppercase font-bold tracking-[0.2em] mb-1 ${isSteampunk ? 'text-amber-200' : config.theme.text} opacity-80`}>{config.label}</span>
+                    <span className={`text-[10px] uppercase font-bold tracking-[0.2em] mb-1 ${labelClass} opacity-80`}>{config.label}</span>
                     <input 
                         type="number"
                         value={score}
@@ -325,20 +427,20 @@ const AttributeBlock = React.memo(({ config, data, update, isSteampunk = false }
                 </div>
                 <div className="flex items-center justify-center relative w-12 h-12">
                     <div className="absolute inset-0 opacity-10 rounded-full blur-xl bg-white" />
-                    <span className={`text-4xl font-display font-bold ${isSteampunk ? 'text-amber-100' : config.theme.text} drop-shadow-sm`}>
+                    <span className={`text-4xl font-display font-bold ${modClass} drop-shadow-sm`}>
                         {mod >= 0 ? `+${mod}` : mod}
                     </span>
                 </div>
             </div>
             <div className="px-3 pb-3 space-y-3 flex-1">
-                <div className={`flex items-center justify-between rounded-lg px-3 py-2 border transition-all duration-300 ${isSaveProf ? (isSteampunk ? 'bg-amber-900/20 border-amber-700/30' : `bg-${config.key === 'cha' || config.key === 'str' ? 'white' : 'black'}/5 ${config.theme.border} border-opacity-30`) : (isSteampunk ? 'bg-stone-900/30 border-stone-700/30' : 'bg-iron-950/30 border-slate-800/50')}`}>
+                <div className={`flex items-center justify-between rounded-lg px-3 py-2 border transition-all duration-300 ${isSaveProf ? saveActiveClass : saveInactiveClass}`}>
                     <div className="flex items-center gap-3">
-                        <DynamicToggle checked={isSaveProf} onChange={(c) => update(`savingThrows.${attrKey}`, c)} theme={config.theme} size="md" isSteampunk={isSteampunk} />
-                        <span className={`text-xs font-bold uppercase tracking-wider ${isSaveProf ? (isSteampunk ? 'text-amber-100' : 'text-slate-200') : (isSteampunk ? 'text-stone-400' : 'text-slate-500')}`}>Salvaguarda</span>
+                        <DynamicToggle checked={isSaveProf} onChange={(c) => update(`savingThrows.${attrKey}`, c)} theme={config.theme} size="md" isSteampunk={isSteampunk} isWildfire={isWildfire} />
+                        <span className={`text-xs font-bold uppercase tracking-wider ${isSaveProf ? saveTextActive : saveTextInactive}`}>Salvaguarda</span>
                     </div>
-                    <span className={`text-sm font-bold font-mono ${isSaveProf ? (isSteampunk ? 'text-amber-200' : config.theme.text) : (isSteampunk ? 'text-stone-500' : 'text-slate-600')}`}>{saveVal >= 0 ? `+${saveVal}` : saveVal}</span>
+                    <span className={`text-sm font-bold font-mono ${isSaveProf ? modClass : saveTextInactive}`}>{saveVal >= 0 ? `+${saveVal}` : saveVal}</span>
                 </div>
-                {Object.keys(config.skills).length > 0 && <div className={`h-px w-full ${isSteampunk ? 'bg-amber-800/30' : 'bg-slate-800/50'}`} />}
+                {Object.keys(config.skills).length > 0 && <div className={`h-px w-full ${dividerClass}`} />}
                 <div className="space-y-1">
                     {Object.entries(config.skills).map(([skillKey, skillLabel]) => {
                         // @ts-ignore
@@ -356,22 +458,30 @@ const AttributeBlock = React.memo(({ config, data, update, isSteampunk = false }
                                 if (isSuggested && !isProf && currentPicks < needed) {
                                     highlightClass = isSteampunk 
                                         ? "border-amber-500/80 bg-amber-900/20 shadow-[0_0_8px_rgba(217,119,6,0.3)] animate-pulse"
+                                        : isWildfire
+                                        ? "border-orange-500/80 bg-orange-900/20 shadow-[0_0_8px_rgba(249,115,22,0.3)] animate-pulse"
                                         : "border-copper-500/80 bg-copper-900/10 shadow-[0_0_8px_rgba(245,158,11,0.2)] animate-pulse";
                                 }
                             }
                         }
 
+                        const skillTextProf = isSteampunk ? 'text-amber-100 font-medium' : isWildfire ? 'text-orange-100 font-medium' : 'text-slate-200 font-medium';
+                        const skillTextNonProf = isSteampunk ? 'text-stone-400 group-hover/skill:text-stone-300' : isWildfire ? 'text-gray-400 group-hover/skill:text-gray-300' : 'text-slate-500 group-hover/skill:text-slate-400';
+                        const skillTextSuggested = isSteampunk ? 'text-amber-400 font-medium' : isWildfire ? 'text-orange-400 font-medium' : 'text-copper-400 font-medium';
+                        const skillValProf = isSteampunk ? 'text-amber-200 font-bold' : isWildfire ? 'text-orange-200 font-bold' : `${config.theme.text} font-bold`;
+                        const skillValNonProf = isSteampunk ? 'text-stone-500' : isWildfire ? 'text-gray-500' : 'text-slate-600';
+
                         return (
                             <div key={skillKey} className={`flex items-center justify-between px-2 py-1.5 rounded border border-transparent transition-colors group/skill cursor-pointer ${highlightClass} ${!highlightClass ? 'hover:bg-white/5' : ''}`} onClick={() => update(`skills.${skillKey}`, !isProf)}>
                                 <div className="flex items-center gap-3">
                                     <div onClick={(e) => e.stopPropagation()}>
-                                        <DynamicToggle checked={isProf} onChange={(c) => update(`skills.${skillKey}`, c)} theme={config.theme} size="sm" isSteampunk={isSteampunk} />
+                                        <DynamicToggle checked={isProf} onChange={(c) => update(`skills.${skillKey}`, c)} theme={config.theme} size="sm" isSteampunk={isSteampunk} isWildfire={isWildfire} />
                                     </div>
-                                    <span className={`text-xs transition-colors ${isProf ? (isSteampunk ? 'text-amber-100 font-medium' : 'text-slate-200 font-medium') : (isSteampunk ? 'text-stone-400 group-hover/skill:text-stone-300' : 'text-slate-500 group-hover/skill:text-slate-400')} ${isSuggested && !isProf ? (isSteampunk ? 'text-amber-400 font-medium' : 'text-copper-400 font-medium') : ''}`}>
+                                    <span className={`text-xs transition-colors ${isProf ? skillTextProf : skillTextNonProf} ${isSuggested && !isProf ? skillTextSuggested : ''}`}>
                                         {skillLabel as string}
                                     </span>
                                 </div>
-                                <span className={`text-xs font-mono transition-colors ${isProf ? (isSteampunk ? 'text-amber-200 font-bold' : `${config.theme.text} font-bold`) : (isSteampunk ? 'text-stone-500' : 'text-slate-600')}`}>{skillVal >= 0 ? `+${skillVal}` : skillVal}</span>
+                                <span className={`text-xs font-mono transition-colors ${isProf ? skillValProf : skillValNonProf}`}>{skillVal >= 0 ? `+${skillVal}` : skillVal}</span>
                             </div>
                         )
                     })}
@@ -384,6 +494,8 @@ const AttributeBlock = React.memo(({ config, data, update, isSteampunk = false }
 const CharacterSheet: React.FC = () => {
   const { currentTheme, currentCharacter } = useTheme();
   const isSteampunk = currentTheme?.id === 'steampunk-victorian';
+  const isWildfire = currentTheme?.id === 'wildfire-primal';
+  const themeStyle = THEME_STYLES[getThemeStyleId(currentTheme?.id)];
   
   const [data, setData] = useState<CharacterSheetData>(DEFAULT_DATA);
   const [isSaved, setIsSaved] = useState(false);
@@ -850,7 +962,7 @@ const CharacterSheet: React.FC = () => {
         totalWeight += wVal * (i.quantity || 1);
     });
     let totalCoins = 0;
-    Object.values(data.currency).forEach(v => totalCoins += parseInt(v) || 0);
+    Object.values(data.currency).forEach(v => totalCoins += parseInt(String(v)) || 0);
     totalWeight += totalCoins / 50;
 
     const maxCapacity = data.stats.str * 15;
@@ -972,7 +1084,7 @@ const CharacterSheet: React.FC = () => {
   const detectedClass = (data.info.classes && data.info.classes.length > 0) ? data.info.classes[0].name : "Artificer";
 
   return (
-    <div className="pt-24 pb-20 container mx-auto max-w-[90rem] px-2 md:px-6 font-sans text-slate-300">
+    <div className={`pt-24 pb-20 container mx-auto max-w-[90rem] px-2 md:px-6 font-sans ${themeStyle.text}`}>
       
       {showImporter && (
           <WikidotImporter 
@@ -1193,7 +1305,7 @@ const CharacterSheet: React.FC = () => {
         {/* Right Column: Actions */}
         <div className="flex gap-3 shrink-0">
              <button onClick={() => update('inspiration', !data.inspiration)} className={`flex items-center gap-2 px-3 py-1.5 rounded border transition-all ${data.inspiration ? 'bg-amber-500/10 border-amber-500 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'bg-iron-900 border-slate-700 text-slate-500'}`}>
-                <Flame className={`w-4 h-4 ${data.inspiration ? 'fill-current' : ''}`} /> Inspiração
+                <FlameIcon className={`w-4 h-4 ${data.inspiration ? 'fill-current' : ''}`} /> Inspiração
             </button>
             <button onClick={saveSheet} className="flex items-center gap-2 px-4 py-1.5 rounded bg-copper-600 text-white text-sm font-bold hover:bg-copper-500 shadow-lg shadow-copper-900/20">
                 <Save className="w-4 h-4" /> {isSaved ? "Salvo" : "Salvar"}
@@ -1228,52 +1340,52 @@ const CharacterSheet: React.FC = () => {
 
       {/* --- COMBAT STATS GRID --- */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
-         <div className={`col-span-2 rounded-xl p-4 flex items-center gap-4 relative overflow-hidden ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/50 border border-slate-800'}`}>
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${isSteampunk ? 'bg-red-700' : 'bg-red-600'}`} />
-            <div className={`p-3 rounded-full ${isSteampunk ? 'bg-stone-900 border border-red-800/30' : 'bg-iron-950 border border-red-900/30'}`}>
-                <Heart className={`w-6 h-6 ${isSteampunk ? 'text-red-400' : 'text-red-500'}`} />
+         <div className={`col-span-2 rounded-xl p-4 flex items-center gap-4 relative overflow-hidden ${themeStyle.panel}`}>
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-600" />
+            <div className={`p-3 rounded-full ${themeStyle.highlight} border border-red-900/30`}>
+                <Heart className="w-6 h-6 text-red-500" />
             </div>
             <div className="flex-1 z-10">
                 <div className="flex justify-between items-end mb-1">
-                    <span className={`text-[10px] uppercase font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>Pontos de Vida</span>
+                    <span className={`text-[10px] uppercase font-bold ${themeStyle.textDim}`}>Pontos de Vida</span>
                     <div className="flex items-center gap-1 text-xs">
-                         <span className={isSteampunk ? 'text-stone-400' : 'text-slate-500'}>Max:</span>
-                         <input value={data.combat.hpMax} onChange={(e) => update('combat.hpMax', parseInt(e.target.value))} className={`w-8 bg-transparent text-right focus:outline-none font-bold ${isSteampunk ? 'text-amber-100' : 'text-slate-300'}`} type="number" />
+                         <span className={themeStyle.textDim}>Max:</span>
+                         <input value={data.combat.hpMax} onChange={(e) => update('combat.hpMax', parseInt(e.target.value))} className={`w-8 bg-transparent text-right focus:outline-none font-bold ${themeStyle.text}`} type="number" />
                     </div>
                 </div>
                 <div className="flex items-baseline gap-2">
-                    <input type="number" value={data.combat.hpCurrent} onChange={(e) => update('combat.hpCurrent', parseInt(e.target.value))} className={`text-4xl font-display font-bold bg-transparent w-24 focus:outline-none ${isSteampunk ? 'text-amber-50' : 'text-slate-100'}`} />
+                    <input type="number" value={data.combat.hpCurrent} onChange={(e) => update('combat.hpCurrent', parseInt(e.target.value))} className={`text-4xl font-display font-bold bg-transparent w-24 focus:outline-none ${themeStyle.text}`} />
                     <div className="flex flex-col">
-                        <span className={`text-[9px] uppercase font-bold ${isSteampunk ? 'text-amber-500' : 'text-copper-500'}`}>Temp</span>
-                        <input value={data.combat.hpTemp || 0} onChange={(e) => update('combat.hpTemp', parseInt(e.target.value))} className={`w-8 bg-transparent text-xs focus:outline-none border-b ${isSteampunk ? 'text-stone-300 border-stone-700' : 'text-slate-400 border-slate-800'}`} type="number" />
+                        <span className={`text-[9px] uppercase font-bold ${themeStyle.accent}`}>Temp</span>
+                        <input value={data.combat.hpTemp || 0} onChange={(e) => update('combat.hpTemp', parseInt(e.target.value))} className={`w-8 bg-transparent text-xs focus:outline-none border-b ${themeStyle.textMuted} ${themeStyle.border}`} type="number" />
                     </div>
                 </div>
                 <div className="flex items-center gap-2 mt-2">
-                    <div className={`h-1.5 flex-1 rounded-full overflow-hidden border ${isSteampunk ? 'bg-stone-900 border-stone-700/50' : 'bg-iron-950 border-slate-800/50'}`}>
-                        <div className={`h-full ${isSteampunk ? 'bg-red-700 shadow-[0_0_10px_rgba(185,28,28,0.5)]' : 'bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.5)]'}`} style={{ width: `${Math.min(100, (data.combat.hpCurrent / (data.combat.hpMax || 1)) * 100)}%` }} />
+                    <div className={`h-1.5 flex-1 rounded-full overflow-hidden border ${themeStyle.highlight}`}>
+                        <div className="h-full bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.5)]" style={{ width: `${Math.min(100, (data.combat.hpCurrent / (data.combat.hpMax || 1)) * 100)}%` }} />
                     </div>
-                    <div className={`text-[10px] font-mono ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`} title="Dados de Vida">{data.info.level}d{data.hitDieType}</div>
+                    <div className={`text-[10px] font-mono ${themeStyle.textDim}`} title="Dados de Vida">{data.info.level}d{data.hitDieType}</div>
                 </div>
             </div>
          </div>
 
-         <div className={`rounded-xl p-3 flex flex-col items-center justify-center ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/50 border border-slate-800'}`}>
-             <Shield className={`w-6 h-6 mb-1 ${isSteampunk ? 'text-amber-400' : 'text-slate-400'}`} />
-             <span className={`text-4xl font-display font-bold ${isSteampunk ? 'text-amber-50' : 'text-white'}`}>{calculatedStats.ac}</span>
-             <span className={`text-[10px] uppercase font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>CA</span>
+         <div className={`rounded-xl p-3 flex flex-col items-center justify-center ${themeStyle.panel}`}>
+             <Shield className={`w-6 h-6 mb-1 ${themeStyle.headerAccent}`} />
+             <span className={`text-4xl font-display font-bold ${themeStyle.text}`}>{calculatedStats.ac}</span>
+             <span className={`text-[10px] uppercase font-bold ${themeStyle.textDim}`}>CA</span>
          </div>
 
-         <div className={`rounded-xl p-3 flex flex-col items-center justify-center ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/50 border border-slate-800'}`}>
-             <Zap className={`w-6 h-6 mb-1 ${isSteampunk ? 'text-amber-400' : 'text-yellow-500'}`} />
-             <span className={`text-4xl font-display font-bold ${isSteampunk ? 'text-amber-50' : 'text-white'}`}>{calculatedStats.initiative >= 0 ? `+${calculatedStats.initiative}` : calculatedStats.initiative}</span>
-             <span className={`text-[10px] uppercase font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>Iniciativa</span>
+         <div className={`rounded-xl p-3 flex flex-col items-center justify-center ${themeStyle.panel}`}>
+             <Zap className={`w-6 h-6 mb-1 ${themeStyle.headerAccent}`} />
+             <span className={`text-4xl font-display font-bold ${themeStyle.text}`}>{calculatedStats.initiative >= 0 ? `+${calculatedStats.initiative}` : calculatedStats.initiative}</span>
+             <span className={`text-[10px] uppercase font-bold ${themeStyle.textDim}`}>Iniciativa</span>
          </div>
 
-         <div className={`hidden lg:flex rounded-xl p-3 flex-col items-center justify-center ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/50 border border-slate-800'}`}>
-             <div className={`text-sm font-bold mb-1 ${isSteampunk ? 'text-amber-300' : 'text-slate-400'}`}>Deslocamento</div>
+         <div className={`hidden lg:flex rounded-xl p-3 flex-col items-center justify-center ${themeStyle.panel}`}>
+             <div className={`text-sm font-bold mb-1 ${themeStyle.textMuted}`}>Deslocamento</div>
              <div className="flex items-baseline gap-1">
-                <input value={data.combat.speed} onChange={(e) => update('combat.speed', e.target.value)} className={`text-3xl font-display font-bold bg-transparent w-12 text-center focus:outline-none ${isSteampunk ? 'text-amber-50' : 'text-white'}`} />
-                <span className={`text-xs ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`}>m</span>
+                <input value={data.combat.speed} onChange={(e) => update('combat.speed', e.target.value)} className={`text-3xl font-display font-bold bg-transparent w-12 text-center focus:outline-none ${themeStyle.text}`} />
+                <span className={`text-xs ${themeStyle.textDim}`}>m</span>
              </div>
          </div>
       </div>
@@ -1282,17 +1394,17 @@ const CharacterSheet: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-7 xl:col-span-8">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {ABILITY_CONFIG.map(config => <AttributeBlock key={config.key} config={config} data={data} update={update} isSteampunk={isSteampunk} />)}
+                  {ABILITY_CONFIG.map(config => <AttributeBlock key={config.key} config={config} data={data} update={update} isSteampunk={isSteampunk} isWildfire={isWildfire} />)}
               </div>
               
-              <div className={`mt-6 rounded-xl p-4 ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/30 border border-slate-800'}`}>
-                  <h3 className={`flex items-center gap-2 font-display text-sm mb-4 ${isSteampunk ? 'text-amber-200' : 'text-slate-300'}`}><Activity className={`w-4 h-4 ${isSteampunk ? 'text-amber-400' : 'text-copper-500'}`} /> Proficiências & Idiomas</h3>
+              <div className={`mt-6 rounded-xl p-4 ${themeStyle.panel}`}>
+                  <h3 className={`flex items-center gap-2 font-display text-sm mb-4 ${themeStyle.header}`}><Activity className={`w-4 h-4 ${themeStyle.accent}`} /> Proficiências & Idiomas</h3>
                   {/* ... Proficiencies UI ... */}
-                  <div className={`mb-4 pb-4 border-b ${isSteampunk ? 'border-amber-800/30' : 'border-slate-800/50'}`}>
-                       <span className={`text-[10px] font-bold uppercase tracking-wider mb-2 block ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>Armaduras</span>
+                  <div className={`mb-4 pb-4 border-b ${themeStyle.border}`}>
+                       <span className={`text-[10px] font-bold uppercase tracking-wider mb-2 block ${themeStyle.textDim}`}>Armaduras</span>
                        <div className="flex flex-wrap gap-2">
                            {['Leve', 'Média', 'Pesada', 'Escudos'].map(type => (
-                               <button key={type} onClick={() => toggleProficiency('armor', type)} className={`text-xs px-3 py-1.5 rounded border transition-colors ${data.proficiencies?.armor?.includes(type) ? (isSteampunk ? 'bg-amber-900/30 border-amber-500/50 text-amber-200' : 'bg-blue-900/30 border-blue-500/50 text-blue-300') : (isSteampunk ? 'bg-stone-900 border-stone-700 text-stone-400 hover:text-amber-200' : 'bg-iron-950 border-slate-800 text-slate-500 hover:text-slate-300')}`}>{type}</button>
+                               <button key={type} onClick={() => toggleProficiency('armor', type)} className={`text-xs px-3 py-1.5 rounded border transition-colors ${data.proficiencies?.armor?.includes(type) ? `${themeStyle.highlightActive} ${themeStyle.text}` : `${themeStyle.button}`}`}>{type}</button>
                            ))}
                        </div>
                   </div>
@@ -1340,53 +1452,53 @@ const CharacterSheet: React.FC = () => {
                    </div>
               </div>
 
-              <div className={`mt-6 rounded-xl p-4 ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/30 border border-slate-800'}`}>
-                  <div className={`flex justify-between items-center mb-4 pb-2 border-b ${isSteampunk ? 'border-amber-700/30' : 'border-slate-800/50'}`}>
-                      <h3 className={`flex items-center gap-2 font-display text-sm ${isSteampunk ? 'text-amber-200' : 'text-slate-300'}`}><Star className={`w-4 h-4 ${isSteampunk ? 'text-amber-400' : 'text-copper-500'}`} /> Talentos (Feats)</h3>
+              <div className={`mt-6 rounded-xl p-4 ${isSteampunk ? 'sp-bronze-plate sp-rivets' : isWildfire ? 'wf-charred-wood wf-ember-glow' : 'bg-iron-900/30 border border-slate-800'}`}>
+                  <div className={`flex justify-between items-center mb-4 pb-2 border-b ${isSteampunk ? 'border-amber-700/30' : isWildfire ? 'border-orange-900/30' : 'border-slate-800/50'}`}>
+                      <h3 className={`flex items-center gap-2 font-display text-sm ${isSteampunk ? 'text-amber-200' : isWildfire ? 'text-orange-200' : 'text-slate-300'}`}><Star className={`w-4 h-4 ${isSteampunk ? 'text-amber-400' : isWildfire ? 'text-orange-400' : 'text-copper-500'}`} /> Talentos (Feats)</h3>
                       <div className="flex gap-2">
-                           <button onClick={() => handleOpenImporter('feats')} className="bg-iron-800 text-slate-400 p-1 rounded hover:bg-copper-600 hover:text-white transition-colors border border-slate-700"><Download className="w-3 h-3" /></button>
-                           <button onClick={handleAddFeat} className="bg-copper-600/20 text-copper-500 p-1 rounded hover:bg-copper-600 hover:text-white transition-colors"><Plus className="w-3 h-3" /></button>
+                           <button onClick={() => handleOpenImporter('feats')} className={`p-1 rounded transition-colors border ${isSteampunk ? 'bg-stone-800 text-stone-400 border-stone-600 hover:bg-amber-700 hover:text-white' : isWildfire ? 'bg-[#1a1510] text-orange-400/60 border-orange-900/50 hover:bg-orange-700 hover:text-white' : 'bg-iron-800 text-slate-400 border-slate-700 hover:bg-copper-600 hover:text-white'}`}><Download className="w-3 h-3" /></button>
+                           <button onClick={handleAddFeat} className={`p-1 rounded transition-colors ${isSteampunk ? 'bg-amber-700/20 text-amber-500 hover:bg-amber-700 hover:text-white' : isWildfire ? 'bg-orange-700/20 text-orange-500 hover:bg-orange-700 hover:text-white' : 'bg-copper-600/20 text-copper-500 hover:bg-copper-600 hover:text-white'}`}><Plus className="w-3 h-3" /></button>
                       </div>
                   </div>
                   <div className="space-y-3">
                       {(data.feats || []).map((feat, index) => {
                           const i = index; 
                           return (
-                              <div key={feat.id} className={`rounded p-3 text-xs group ${isSteampunk ? 'sp-wood-inset' : 'bg-iron-950/50 border border-slate-800'}`}>
+                              <div key={feat.id} className={`rounded p-3 text-xs group ${isSteampunk ? 'sp-wood-inset' : isWildfire ? 'bg-[#0d0805]/70 border border-orange-900/30 rounded-lg' : 'bg-iron-950/50 border border-slate-800'}`}>
                                   <div className="flex justify-between items-center mb-1">
-                                      <input value={feat.name} onChange={(e) => {const f = [...(data.feats || [])]; f[i].name = e.target.value; update('feats', f)}} className={`bg-transparent font-bold w-full focus:outline-none ${isSteampunk ? 'text-amber-100' : 'text-slate-200'}`} placeholder="Nome do Talento" />
+                                      <input value={feat.name} onChange={(e) => {const f = [...(data.feats || [])]; f[i].name = e.target.value; update('feats', f)}} className={`bg-transparent font-bold w-full focus:outline-none ${isSteampunk ? 'text-amber-100' : isWildfire ? 'text-orange-100' : 'text-slate-200'}`} placeholder="Nome do Talento" />
                                       <div className="flex items-center gap-2 shrink-0">
-                                          <span className={`text-[9px] uppercase tracking-wide ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`}>{feat.source}</span>
-                                          <button onClick={() => handleDeleteFeat(feat.id)} className={`${isSteampunk ? 'text-stone-600 hover:text-red-400' : 'text-slate-700 hover:text-red-500'}`}><Trash2 className="w-3.5 h-3.5"/></button>
+                                          <span className={`text-[9px] uppercase tracking-wide ${isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/50' : 'text-slate-600'}`}>{feat.source}</span>
+                                          <button onClick={() => handleDeleteFeat(feat.id)} className={`${isSteampunk ? 'text-stone-600 hover:text-red-400' : isWildfire ? 'text-orange-900 hover:text-red-400' : 'text-slate-700 hover:text-red-500'}`}><Trash2 className="w-3.5 h-3.5"/></button>
                                       </div>
                                   </div>
-                                  <textarea value={feat.description} onChange={(e) => {const f = [...(data.feats || [])]; f[i].description = e.target.value; update('feats', f)}} className={`w-full bg-transparent focus:outline-none resize-none min-h-[40px] border-l-2 pl-2 ${isSteampunk ? 'text-stone-400 focus:text-amber-100 border-amber-800/50' : 'text-slate-400 focus:text-slate-300 border-slate-800'}`} placeholder="Descrição..." />
+                                  <textarea value={feat.description} onChange={(e) => {const f = [...(data.feats || [])]; f[i].description = e.target.value; update('feats', f)}} className={`w-full bg-transparent focus:outline-none resize-none min-h-[40px] border-l-2 pl-2 ${isSteampunk ? 'text-stone-400 focus:text-amber-100 border-amber-800/50' : isWildfire ? 'text-orange-300/60 focus:text-orange-100 border-orange-800/50' : 'text-slate-400 focus:text-slate-300 border-slate-800'}`} placeholder="Descrição..." />
                               </div>
                           )
                       })}
-                      {(!data.feats || data.feats.length === 0) && <div className={`text-center text-xs italic py-4 ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`}>Nenhum talento adicionado.</div>}
+                      {(!data.feats || data.feats.length === 0) && <div className={`text-center text-xs italic py-4 ${isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/50' : 'text-slate-600'}`}>Nenhum talento adicionado.</div>}
                   </div>
               </div>
           </div>
 
           <div className="lg:col-span-5 xl:col-span-4 space-y-6">
-              <div className={`rounded-xl p-5 ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/30 border border-slate-800/60'}`}>
-                   <h3 className={`flex items-center gap-2 font-display mb-4 pb-2 border-b ${isSteampunk ? 'text-amber-100 border-amber-700/30' : 'text-slate-200 border-slate-800'}`}><Swords className={`w-4 h-4 ${isSteampunk ? 'text-amber-400' : 'text-copper-500'}`} /> Ações</h3>
+              <div className={`rounded-xl p-5 ${isSteampunk ? 'sp-bronze-plate sp-rivets' : isWildfire ? 'wf-charred-wood wf-ember-glow' : 'bg-iron-900/30 border border-slate-800/60'}`}>
+                   <h3 className={`flex items-center gap-2 font-display mb-4 pb-2 border-b ${isSteampunk ? 'text-amber-100 border-amber-700/30' : isWildfire ? 'text-orange-100 border-orange-900/30' : 'text-slate-200 border-slate-800'}`}><Swords className={`w-4 h-4 ${isSteampunk ? 'text-amber-400' : isWildfire ? 'text-orange-400' : 'text-copper-500'}`} /> Ações</h3>
                    <div className="space-y-2">
                        {calculatedStats.attacks.map((atk, i) => (
-                           <div key={i} className={`rounded p-3 flex justify-between items-center transition-all group ${isSteampunk ? 'sp-wood-inset hover:brightness-110' : 'bg-iron-950/80 border border-slate-700 hover:border-copper-500/50'}`}>
+                           <div key={i} className={`rounded p-3 flex justify-between items-center transition-all group ${isSteampunk ? 'sp-wood-inset hover:brightness-110' : isWildfire ? 'bg-[#0d0805]/70 border border-orange-900/30 rounded-lg hover:border-orange-600/50' : 'bg-iron-950/80 border border-slate-700 hover:border-copper-500/50'}`}>
                                <div>
-                                   <div className={`font-bold text-sm group-hover:text-white ${isSteampunk ? 'text-amber-100' : 'text-slate-200'}`}>{atk.name}</div>
-                                   <div className={`text-[10px] uppercase font-bold ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>{atk.type}</div>
+                                   <div className={`font-bold text-sm group-hover:text-white ${isSteampunk ? 'text-amber-100' : isWildfire ? 'text-orange-100' : 'text-slate-200'}`}>{atk.name}</div>
+                                   <div className={`text-[10px] uppercase font-bold ${isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/50' : 'text-slate-500'}`}>{atk.type}</div>
                                </div>
                                <div className="flex gap-2 text-right">
                                    <div className="text-center">
-                                       <div className={`text-[9px] uppercase font-bold ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`}>Atq</div>
-                                       <div className={`text-sm font-bold ${atk.isProficient ? (isSteampunk ? 'text-amber-400' : 'text-copper-400') : (isSteampunk ? 'text-stone-400' : 'text-slate-400')}`}>{atk.bonus}</div>
+                                       <div className={`text-[9px] uppercase font-bold ${isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/50' : 'text-slate-600'}`}>Atq</div>
+                                       <div className={`text-sm font-bold ${atk.isProficient ? (isSteampunk ? 'text-amber-400' : isWildfire ? 'text-orange-400' : 'text-copper-400') : (isSteampunk ? 'text-stone-400' : isWildfire ? 'text-orange-300/50' : 'text-slate-400')}`}>{atk.bonus}</div>
                                    </div>
                                    <div className="text-center w-16">
-                                       <div className={`text-[9px] uppercase font-bold ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`}>Dano</div>
-                                       <div className={`text-sm font-bold ${isSteampunk ? 'text-amber-100' : 'text-slate-200'}`}>{atk.damage}</div>
+                                       <div className={`text-[9px] uppercase font-bold ${isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/50' : 'text-slate-600'}`}>Dano</div>
+                                       <div className={`text-sm font-bold ${isSteampunk ? 'text-amber-100' : isWildfire ? 'text-orange-100' : 'text-slate-200'}`}>{atk.damage}</div>
                                    </div>
                                </div>
                            </div>
@@ -1394,12 +1506,12 @@ const CharacterSheet: React.FC = () => {
                    </div>
               </div>
 
-              <div className={`rounded-xl p-5 ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/30 border border-slate-800/60'}`}>
+              <div className={`rounded-xl p-5 ${isSteampunk ? 'sp-bronze-plate sp-rivets' : isWildfire ? 'wf-charred-wood wf-ember-glow' : 'bg-iron-900/30 border border-slate-800/60'}`}>
                    <div className="flex justify-between items-center mb-4">
-                       <h3 className={`flex items-center gap-2 font-display ${isSteampunk ? 'text-amber-100' : 'text-slate-200'}`}><Box className={`w-4 h-4 ${isSteampunk ? 'text-amber-400' : 'text-copper-500'}`} /> Inventário & Habilidades</h3>
+                       <h3 className={`flex items-center gap-2 font-display ${isSteampunk ? 'text-amber-100' : isWildfire ? 'text-orange-100' : 'text-slate-200'}`}><Box className={`w-4 h-4 ${isSteampunk ? 'text-amber-400' : isWildfire ? 'text-orange-400' : 'text-copper-500'}`} /> Inventário & Habilidades</h3>
                        <div className="flex gap-2">
-                           <button onClick={() => handleOpenImporter('armor')} className={`p-1 rounded transition-colors border ${isSteampunk ? 'bg-stone-800 text-stone-400 border-stone-600 hover:bg-amber-700 hover:text-white' : 'bg-iron-800 text-slate-400 border-slate-700 hover:bg-copper-600 hover:text-white'}`} title="Importar Equipamento"><Download className="w-4 h-4" /></button>
-                           <button onClick={handleAddItem} className={`p-1 rounded transition-colors ${isSteampunk ? 'bg-amber-700/20 text-amber-500 hover:bg-amber-700 hover:text-white' : 'bg-copper-600/20 text-copper-500 hover:bg-copper-600 hover:text-white'}`} title="Adicionar Item"><Plus className="w-4 h-4" /></button>
+                           <button onClick={() => handleOpenImporter('armor')} className={`p-1 rounded transition-colors border ${isSteampunk ? 'bg-stone-800 text-stone-400 border-stone-600 hover:bg-amber-700 hover:text-white' : isWildfire ? 'bg-[#1a1510] text-orange-400/60 border-orange-900/50 hover:bg-orange-700 hover:text-white' : 'bg-iron-800 text-slate-400 border-slate-700 hover:bg-copper-600 hover:text-white'}`} title="Importar Equipamento"><Download className="w-4 h-4" /></button>
+                           <button onClick={handleAddItem} className={`p-1 rounded transition-colors ${isSteampunk ? 'bg-amber-700/20 text-amber-500 hover:bg-amber-700 hover:text-white' : isWildfire ? 'bg-orange-700/20 text-orange-500 hover:bg-orange-700 hover:text-white' : 'bg-copper-600/20 text-copper-500 hover:bg-copper-600 hover:text-white'}`} title="Adicionar Item"><Plus className="w-4 h-4" /></button>
                        </div>
                    </div>
 
@@ -1519,65 +1631,65 @@ const CharacterSheet: React.FC = () => {
                         {activeTab === 'features' && (
                             <div className="space-y-4">
                                 {(data.classFeatures || []).sort((a,b) => a.level - b.level).map((feature, idx) => (
-                                    <div key={idx} onClick={() => setViewingFeature(feature)} className={`rounded p-3 text-xs flex gap-3 cursor-pointer transition-colors group ${isSteampunk ? 'sp-bronze-plate sp-rivets hover:brightness-110' : 'bg-iron-950/50 border border-slate-800 hover:bg-white/5'}`}>
-                                        <div className={`flex flex-col items-center justify-center p-2 rounded h-fit transition-colors ${isSteampunk ? 'sp-wood-inset group-hover:border-amber-700' : 'bg-iron-900 border border-slate-800 group-hover:border-slate-600'}`}>
-                                            <span className={`text-[9px] font-bold uppercase ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>Nível</span>
-                                            <span className={`text-lg font-display ${isSteampunk ? 'text-amber-400' : 'text-copper-500'}`}>{feature.level}</span>
+                                    <div key={idx} onClick={() => setViewingFeature(feature)} className={`rounded p-3 text-xs flex gap-3 cursor-pointer transition-colors group ${isSteampunk ? 'sp-bronze-plate sp-rivets hover:brightness-110' : isWildfire ? 'bg-[#0d0805]/70 border border-orange-900/30 rounded-lg hover:border-orange-600/50' : 'bg-iron-950/50 border border-slate-800 hover:bg-white/5'}`}>
+                                        <div className={`flex flex-col items-center justify-center p-2 rounded h-fit transition-colors ${isSteampunk ? 'sp-wood-inset group-hover:border-amber-700' : isWildfire ? 'bg-[#1a1510] border border-orange-900/30 group-hover:border-orange-600/50' : 'bg-iron-900 border border-slate-800 group-hover:border-slate-600'}`}>
+                                            <span className={`text-[9px] font-bold uppercase ${isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/50' : 'text-slate-500'}`}>Nível</span>
+                                            <span className={`text-lg font-display ${isSteampunk ? 'text-amber-400' : isWildfire ? 'text-orange-400' : 'text-copper-500'}`}>{feature.level}</span>
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex justify-between items-start">
-                                                <div className={`font-bold text-sm mb-1 ${isSteampunk ? 'text-amber-100 group-hover:text-amber-300' : 'text-slate-200 group-hover:text-copper-400'}`}>{feature.name}</div>
-                                                <Info className={`w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`} />
+                                                <div className={`font-bold text-sm mb-1 ${isSteampunk ? 'text-amber-100 group-hover:text-amber-300' : isWildfire ? 'text-orange-100 group-hover:text-orange-300' : 'text-slate-200 group-hover:text-copper-400'}`}>{feature.name}</div>
+                                                <Info className={`w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity ${isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/50' : 'text-slate-600'}`} />
                                             </div>
-                                            <div className={`leading-relaxed line-clamp-2 ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>{feature.description || "Clique para ver detalhes."}</div>
+                                            <div className={`leading-relaxed line-clamp-2 ${isSteampunk ? 'text-stone-400' : isWildfire ? 'text-orange-300/60' : 'text-slate-500'}`}>{feature.description || "Clique para ver detalhes."}</div>
                                         </div>
                                     </div>
                                 ))}
-                                {data.classFeatures.length === 0 && <div className={`text-center italic py-8 ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>Nenhuma habilidade de classe registrada. Use o botão de Importar Classe para carregar.</div>}
+                                {data.classFeatures.length === 0 && <div className={`text-center italic py-8 ${isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/50' : 'text-slate-500'}`}>Nenhuma habilidade de classe registrada. Use o botão de Importar Classe para carregar.</div>}
                             </div>
                         )}
                    </div>
               </div>
 
-              <div className={`rounded-xl overflow-hidden ${isSteampunk ? 'sp-bronze-plate sp-rivets' : 'bg-iron-900/30 border border-slate-800/60'}`}>
-                   <button onClick={() => setShowSpells(!showSpells)} className={`w-full flex items-center justify-between p-4 transition-colors ${isSteampunk ? 'bg-transparent hover:bg-amber-900/20' : 'bg-iron-950/50 hover:bg-iron-900'}`}>
-                       <div className={`flex items-center gap-2 font-display ${isSteampunk ? 'text-amber-200' : 'text-slate-200'}`}><Flame className={`w-4 h-4 ${isSteampunk ? 'text-amber-500' : 'text-purple-500'}`} /> Grimório</div>
-                       {showSpells ? <ChevronUp className={`w-4 h-4 ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`} /> : <ChevronDown className={`w-4 h-4 ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`} />}
+              <div className={`rounded-xl overflow-hidden ${isSteampunk ? 'sp-bronze-plate sp-rivets' : isWildfire ? 'wf-charred-wood wf-ember-glow' : 'bg-iron-900/30 border border-slate-800/60'}`}>
+                   <button onClick={() => setShowSpells(!showSpells)} className={`w-full flex items-center justify-between p-4 transition-colors ${isSteampunk ? 'bg-transparent hover:bg-amber-900/20' : isWildfire ? 'bg-transparent hover:bg-orange-900/20' : 'bg-iron-950/50 hover:bg-iron-900'}`}>
+                       <div className={`flex items-center gap-2 font-display ${isSteampunk ? 'text-amber-200' : isWildfire ? 'text-orange-200' : 'text-slate-200'}`}><FlameIcon className={`w-4 h-4 ${isSteampunk ? 'text-amber-500' : isWildfire ? 'text-orange-500' : 'text-purple-500'}`} /> Grimório</div>
+                       {showSpells ? <ChevronUp className={`w-4 h-4 ${isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/50' : 'text-slate-500'}`} /> : <ChevronDown className={`w-4 h-4 ${isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/50' : 'text-slate-500'}`} />}
                    </button>
                    
                    {showSpells && (
-                       <div className={`p-4 border-t ${isSteampunk ? 'border-stone-700/50' : 'border-slate-800'}`}>
-                           <div className={`grid grid-cols-2 gap-3 mb-6 p-3 rounded-lg ${isSteampunk ? 'sp-wood-inset' : 'bg-iron-950/50 border border-slate-800/50'}`}>
+                       <div className={`p-4 border-t ${isSteampunk ? 'border-stone-700/50' : isWildfire ? 'border-orange-900/30' : 'border-slate-800'}`}>
+                           <div className={`grid grid-cols-2 gap-3 mb-6 p-3 rounded-lg ${isSteampunk ? 'sp-wood-inset' : isWildfire ? 'bg-[#0d0805]/70 border border-orange-900/30' : 'bg-iron-950/50 border border-slate-800/50'}`}>
                                <div>
-                                   <div className={`flex justify-between text-[10px] uppercase font-bold mb-1 ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>
+                                   <div className={`flex justify-between text-[10px] uppercase font-bold mb-1 ${isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/60' : 'text-slate-500'}`}>
                                        <span>Preparadas</span>
-                                       <span className={magicStats.currentPrepared > magicStats.maxPrepared ? "text-red-500" : (isSteampunk ? "text-stone-400" : "text-slate-400")}>{magicStats.currentPrepared} / {magicStats.maxPrepared}</span>
+                                       <span className={magicStats.currentPrepared > magicStats.maxPrepared ? "text-red-500" : (isSteampunk ? "text-stone-400" : isWildfire ? "text-orange-300/60" : "text-slate-400")}>{magicStats.currentPrepared} / {magicStats.maxPrepared}</span>
                                    </div>
-                                   <div className={`h-1.5 rounded-full overflow-hidden ${isSteampunk ? 'bg-stone-800' : 'bg-iron-900'}`}>
-                                       <div className={`h-full transition-all ${magicStats.currentPrepared > magicStats.maxPrepared ? 'bg-red-500' : (isSteampunk ? 'bg-amber-500' : 'bg-purple-500')}`} style={{ width: `${Math.min(100, (magicStats.currentPrepared / (magicStats.maxPrepared || 1)) * 100)}%` }} />
+                                   <div className={`h-1.5 rounded-full overflow-hidden ${isSteampunk ? 'bg-stone-800' : isWildfire ? 'bg-[#1a1510]' : 'bg-iron-900'}`}>
+                                       <div className={`h-full transition-all ${magicStats.currentPrepared > magicStats.maxPrepared ? 'bg-red-500' : (isSteampunk ? 'bg-amber-500' : isWildfire ? 'bg-orange-500' : 'bg-purple-500')}`} style={{ width: `${Math.min(100, (magicStats.currentPrepared / (magicStats.maxPrepared || 1)) * 100)}%` }} />
                                    </div>
                                </div>
                                <div>
-                                   <div className={`flex justify-between text-[10px] uppercase font-bold mb-1 ${isSteampunk ? 'text-stone-500' : 'text-slate-500'}`}>
+                                   <div className={`flex justify-between text-[10px] uppercase font-bold mb-1 ${isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/60' : 'text-slate-500'}`}>
                                        <span>Truques</span>
-                                       <span className={magicStats.currentCantrips > magicStats.maxCantrips ? "text-yellow-500" : (isSteampunk ? "text-stone-400" : "text-slate-400")}>{magicStats.currentCantrips} / {magicStats.maxCantrips}</span>
+                                       <span className={magicStats.currentCantrips > magicStats.maxCantrips ? "text-yellow-500" : (isSteampunk ? "text-stone-400" : isWildfire ? "text-orange-300/60" : "text-slate-400")}>{magicStats.currentCantrips} / {magicStats.maxCantrips}</span>
                                    </div>
-                                   <div className={`h-1.5 rounded-full overflow-hidden ${isSteampunk ? 'bg-stone-800' : 'bg-iron-900'}`}>
-                                       <div className={`h-full transition-all ${magicStats.currentCantrips > magicStats.maxCantrips ? 'bg-yellow-500' : (isSteampunk ? 'bg-cyan-500' : 'bg-blue-500')}`} style={{ width: `${Math.min(100, (magicStats.currentCantrips / (magicStats.maxCantrips || 1)) * 100)}%` }} />
+                                   <div className={`h-1.5 rounded-full overflow-hidden ${isSteampunk ? 'bg-stone-800' : isWildfire ? 'bg-[#1a1510]' : 'bg-iron-900'}`}>
+                                       <div className={`h-full transition-all ${magicStats.currentCantrips > magicStats.maxCantrips ? 'bg-yellow-500' : (isSteampunk ? 'bg-cyan-500' : isWildfire ? 'bg-red-500' : 'bg-blue-500')}`} style={{ width: `${Math.min(100, (magicStats.currentCantrips / (magicStats.maxCantrips || 1)) * 100)}%` }} />
                                    </div>
                                </div>
                            </div>
 
                            <div className={`flex justify-between text-center mb-4 text-xs p-2 rounded ${isSteampunk ? 'bg-stone-900/50' : 'bg-iron-950/50'}`}>
                                <div><div className={`font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>ATQ</div><div className={isSteampunk ? 'text-amber-100' : 'text-slate-200'}>{data.magic.attackBonus}</div></div>
-                               <div><div className={`font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>CD</div><div className={isSteampunk ? 'text-amber-100' : 'text-slate-200'}>{data.magic.saveDC}</div></div>
-                               <div><div className={`font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>HAB</div><div className={isSteampunk ? 'text-amber-400' : 'text-copper-400'}>{data.magic.ability}</div></div>
-                               <div><div className={`font-bold ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>NV. CONJ.</div><div className={isSteampunk ? 'text-emerald-300' : 'text-emerald-400'}>{magicStats.casterLevel}</div></div>
+                               <div><div className={`font-bold ${isSteampunk ? 'text-stone-400' : isWildfire ? 'text-orange-400/60' : 'text-slate-500'}`}>CD</div><div className={isSteampunk ? 'text-amber-100' : isWildfire ? 'text-orange-100' : 'text-slate-200'}>{data.magic.saveDC}</div></div>
+                               <div><div className={`font-bold ${isSteampunk ? 'text-stone-400' : isWildfire ? 'text-orange-400/60' : 'text-slate-500'}`}>HAB</div><div className={isSteampunk ? 'text-amber-400' : isWildfire ? 'text-orange-400' : 'text-copper-400'}>{data.magic.ability}</div></div>
+                               <div><div className={`font-bold ${isSteampunk ? 'text-stone-400' : isWildfire ? 'text-orange-400/60' : 'text-slate-500'}`}>NV. CONJ.</div><div className={isSteampunk ? 'text-emerald-300' : isWildfire ? 'text-green-400' : 'text-emerald-400'}>{magicStats.casterLevel}</div></div>
                            </div>
 
                            <div className="flex gap-2 mb-6">
-                               <button onClick={() => handleOpenImporter('spells')} className={`flex-1 py-3 border rounded flex items-center justify-center gap-2 font-bold transition-all text-xs ${isSteampunk ? 'bg-amber-900/30 text-amber-200 border-amber-700 hover:bg-amber-800/50 hover:shadow-lg hover:shadow-amber-900/20' : 'bg-purple-900/30 text-purple-300 border-purple-800 hover:bg-purple-800/50 hover:shadow-lg hover:shadow-purple-900/20'}`}><Globe className="w-4 h-4" /> Buscar</button>
-                               <button onClick={() => handleOpenImporter('class-spells')} className={`flex-1 py-3 border rounded flex items-center justify-center gap-2 font-bold transition-all text-xs ${isSteampunk ? 'bg-stone-800 text-stone-300 border-stone-600 hover:bg-stone-700 hover:text-amber-100' : 'bg-iron-800 text-slate-300 border-slate-700 hover:bg-iron-700 hover:text-white'}`}><ListChecks className="w-4 h-4" /> Lista da Classe</button>
+                               <button onClick={() => handleOpenImporter('spells')} className={`flex-1 py-3 border rounded flex items-center justify-center gap-2 font-bold transition-all text-xs ${isSteampunk ? 'bg-amber-900/30 text-amber-200 border-amber-700 hover:bg-amber-800/50 hover:shadow-lg hover:shadow-amber-900/20' : isWildfire ? 'bg-orange-900/30 text-orange-200 border-orange-700 hover:bg-orange-800/50 hover:shadow-lg hover:shadow-orange-900/20' : 'bg-purple-900/30 text-purple-300 border-purple-800 hover:bg-purple-800/50 hover:shadow-lg hover:shadow-purple-900/20'}`}><Globe className="w-4 h-4" /> Buscar</button>
+                               <button onClick={() => handleOpenImporter('class-spells')} className={`flex-1 py-3 border rounded flex items-center justify-center gap-2 font-bold transition-all text-xs ${isSteampunk ? 'bg-stone-800 text-stone-300 border-stone-600 hover:bg-stone-700 hover:text-amber-100' : isWildfire ? 'bg-[#1a1510] text-orange-300/70 border-orange-900/50 hover:bg-orange-900/50 hover:text-orange-100' : 'bg-iron-800 text-slate-300 border-slate-700 hover:bg-iron-700 hover:text-white'}`}><ListChecks className="w-4 h-4" /> Lista da Classe</button>
                            </div>
                            
                            <div className="space-y-4">
@@ -1586,31 +1698,31 @@ const CharacterSheet: React.FC = () => {
                                    const displayTotal = autoTotal > 0 ? autoTotal : slot.total; 
                                    
                                    return (
-                                   <div key={lvl} className={`rounded border p-2 ${isSteampunk ? 'bg-stone-900/30 border-stone-700/50' : 'bg-iron-950/30 border-slate-800/50'}`}>
+                                   <div key={lvl} className={`rounded border p-2 ${isSteampunk ? 'bg-stone-900/30 border-stone-700/50' : isWildfire ? 'bg-[#0d0805]/50 border-orange-900/30' : 'bg-iron-950/30 border-slate-800/50'}`}>
                                         <div className="flex justify-between items-center mb-2">
-                                            <span className={`text-[10px] font-bold uppercase ${isSteampunk ? 'text-amber-400' : 'text-purple-400'}`}>{lvl === 0 ? 'Truques' : `Nv ${lvl}`}</span>
+                                            <span className={`text-[10px] font-bold uppercase ${isSteampunk ? 'text-amber-400' : isWildfire ? 'text-orange-400' : 'text-purple-400'}`}>{lvl === 0 ? 'Truques' : `Nv ${lvl}`}</span>
                                             {lvl > 0 && (
                                                 <div className="flex items-center gap-1 text-[10px]">
-                                                    <input value={slot.used} onChange={(e) => {const s=[...data.magic.slots]; s[lvl].used=e.target.value; update('magic.slots', s)}} className={`w-6 text-center border rounded outline-none ${isSteampunk ? 'bg-stone-900 border-stone-600 text-amber-100 focus:border-amber-500' : 'bg-iron-900 border-slate-700 text-white focus:border-purple-500'}`} />
-                                                    <span className={isSteampunk ? 'text-stone-500' : 'text-slate-600'}>/</span>
-                                                    <div className={`w-6 text-center bg-transparent font-mono relative group ${isSteampunk ? 'text-stone-400' : 'text-slate-500'}`}>{displayTotal}{autoTotal > 0 && <Lock className={`w-2 h-2 absolute top-0 right-0 opacity-50 ${isSteampunk ? 'text-stone-600' : 'text-slate-700'}`} />}</div>
+                                                    <input value={slot.used} onChange={(e) => {const s=[...data.magic.slots]; s[lvl].used=e.target.value; update('magic.slots', s)}} className={`w-6 text-center border rounded outline-none ${isSteampunk ? 'bg-stone-900 border-stone-600 text-amber-100 focus:border-amber-500' : isWildfire ? 'bg-[#1a1510] border-orange-900/50 text-orange-100 focus:border-orange-500' : 'bg-iron-900 border-slate-700 text-white focus:border-purple-500'}`} />
+                                                    <span className={isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/50' : 'text-slate-600'}>/</span>
+                                                    <div className={`w-6 text-center bg-transparent font-mono relative group ${isSteampunk ? 'text-stone-400' : isWildfire ? 'text-orange-300/60' : 'text-slate-500'}`}>{displayTotal}{autoTotal > 0 && <Lock className={`w-2 h-2 absolute top-0 right-0 opacity-50 ${isSteampunk ? 'text-stone-600' : isWildfire ? 'text-orange-900' : 'text-slate-700'}`} />}</div>
                                                 </div>
                                             )}
                                         </div>
                                         <div className="space-y-1">
                                             {data.magic.spells[lvl]?.map((spell, i) => (
-                                                <div key={i} className={`hover:bg-white/5 rounded transition-all duration-300 border border-transparent ${isSteampunk ? 'hover:border-stone-700' : 'hover:border-slate-800'}`}>
+                                                <div key={i} className={`hover:bg-white/5 rounded transition-all duration-300 border border-transparent ${isSteampunk ? 'hover:border-stone-700' : isWildfire ? 'hover:border-orange-900/50' : 'hover:border-slate-800'}`}>
                                                     <div className="flex items-center gap-2 p-1.5 cursor-pointer" onClick={() => setViewingSpell(spell)}>
-                                                        <div onClick={(e) => e.stopPropagation()}><DynamicToggle checked={spell.prepared} onChange={(c) => {const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl][i].prepared=c; update('magic.spells', s)}} theme={{bg: isSteampunk ? 'bg-amber-500' : 'bg-purple-500', border: isSteampunk ? 'border-amber-500' : 'border-purple-500'}} size="sm" isSteampunk={isSteampunk} /></div>
+                                                        <div onClick={(e) => e.stopPropagation()}><DynamicToggle checked={spell.prepared} onChange={(c) => {const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl][i].prepared=c; update('magic.spells', s)}} theme={{bg: isSteampunk ? 'bg-amber-500' : isWildfire ? 'bg-orange-500' : 'bg-purple-500', border: isSteampunk ? 'border-amber-500' : isWildfire ? 'border-orange-500' : 'border-purple-500'}} size="sm" isSteampunk={isSteampunk} isWildfire={isWildfire} /></div>
                                                         <div className="flex-1 flex items-center justify-between">
-                                                            <input value={spell.name} onChange={(e) => {const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl][i].name=e.target.value; update('magic.spells', s)}} className={`bg-transparent w-full text-xs focus:outline-none cursor-pointer ${spell.prepared ? (isSteampunk ? 'text-amber-100 font-medium' : 'text-slate-200 font-medium') : (isSteampunk ? 'text-stone-500' : 'text-slate-500')}`} placeholder="Magia..." onClick={(e) => e.stopPropagation()} />
-                                                            <div className="flex items-center gap-2">{spell.school && <span className={`text-[9px] uppercase ${isSteampunk ? 'text-stone-500' : 'text-slate-600'}`}>{spell.school.substring(0,3)}</span>}<BookOpen className={`w-3 h-3 ${isSteampunk ? 'text-stone-500 hover:text-amber-400' : 'text-slate-600 hover:text-purple-400'}`} /></div>
+                                                            <input value={spell.name} onChange={(e) => {const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl][i].name=e.target.value; update('magic.spells', s)}} className={`bg-transparent w-full text-xs focus:outline-none cursor-pointer ${spell.prepared ? (isSteampunk ? 'text-amber-100 font-medium' : isWildfire ? 'text-orange-100 font-medium' : 'text-slate-200 font-medium') : (isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-300/50' : 'text-slate-500')}`} placeholder="Magia..." onClick={(e) => e.stopPropagation()} />
+                                                            <div className="flex items-center gap-2">{spell.school && <span className={`text-[9px] uppercase ${isSteampunk ? 'text-stone-500' : isWildfire ? 'text-orange-400/50' : 'text-slate-600'}`}>{spell.school.substring(0,3)}</span>}<BookOpen className={`w-3 h-3 ${isSteampunk ? 'text-stone-500 hover:text-amber-400' : isWildfire ? 'text-orange-400/50 hover:text-orange-400' : 'text-slate-600 hover:text-purple-400'}`} /></div>
                                                         </div>
-                                                        <button onClick={(e) => {e.stopPropagation(); const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl].splice(i,1); update('magic.spells', s)}} className={`opacity-20 hover:opacity-100 hover:text-red-500 ${isSteampunk ? 'text-stone-600' : 'text-slate-700'}`}><Trash2 className="w-3 h-3"/></button>
+                                                        <button onClick={(e) => {e.stopPropagation(); const s=JSON.parse(JSON.stringify(data.magic.spells)); s[lvl].splice(i,1); update('magic.spells', s)}} className={`opacity-20 hover:opacity-100 hover:text-red-500 ${isSteampunk ? 'text-stone-600' : isWildfire ? 'text-orange-900' : 'text-slate-700'}`}><Trash2 className="w-3 h-3"/></button>
                                                     </div>
                                                 </div>
                                             ))}
-                                            <button onClick={() => {const s=JSON.parse(JSON.stringify(data.magic.spells)); if(!s[lvl]) s[lvl]=[]; s[lvl].push({id: Math.random().toString(36), name:"", prepared:false, level: lvl}); update('magic.spells', s)}} className={`text-[10px] flex items-center gap-1 mt-2 pl-2 ${isSteampunk ? 'text-stone-500 hover:text-amber-400' : 'text-slate-600 hover:text-purple-400'}`}><Plus className="w-3 h-3" /> Manual</button>
+                                            <button onClick={() => {const s=JSON.parse(JSON.stringify(data.magic.spells)); if(!s[lvl]) s[lvl]=[]; s[lvl].push({id: Math.random().toString(36), name:"", prepared:false, level: lvl}); update('magic.spells', s)}} className={`text-[10px] flex items-center gap-1 mt-2 pl-2 ${isSteampunk ? 'text-stone-500 hover:text-amber-400' : isWildfire ? 'text-orange-400/50 hover:text-orange-400' : 'text-slate-600 hover:text-purple-400'}`}><Plus className="w-3 h-3" /> Manual</button>
                                         </div>
                                    </div>
                                )})}

@@ -29,21 +29,18 @@ export const CharacterSelector: React.FC<CharacterSelectorProps> = ({ className 
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="
-          flex items-center gap-3 px-4 py-2
+          flex items-center gap-2 px-3 py-2
           sp-bronze-plate sp-rivets
           rounded-lg
           transition-all duration-300
           hover:scale-[1.02]
           group
         "
-        style={{
-          minWidth: '200px'
-        }}
       >
         {/* Ícone de engrenagem animada */}
         <div className="relative z-10">
           <Gear 
-            size={28} 
+            size={24} 
             teeth={8} 
             spinning={isOpen}
             active 
@@ -53,10 +50,7 @@ export const CharacterSelector: React.FC<CharacterSelectorProps> = ({ className 
         
         {/* Nome do personagem */}
         <div className="flex-1 text-left relative z-10">
-          <span className="text-[10px] uppercase tracking-[0.2em] text-amber-600/80 block">
-            Personagem
-          </span>
-          <span className="text-amber-100 font-display font-bold text-sm">
+          <span className="text-amber-100 font-display font-bold text-sm whitespace-nowrap">
             {currentCharacter.shortName}
           </span>
         </div>

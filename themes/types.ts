@@ -1,6 +1,6 @@
 // Tipos para o sistema de temas por personagem
 
-export type ThemeType = 'steampunk-victorian' | 'dark-fantasy' | 'cosmic-horror' | 'nature-druid';
+export type ThemeType = 'steampunk-victorian' | 'dark-fantasy' | 'cosmic-horror' | 'nature-druid' | 'wildfire-primal';
 
 export interface PlayableCharacter {
   id: string;
@@ -47,6 +47,15 @@ export const PLAYABLE_CHARACTERS: PlayableCharacter[] = [
     storyData: 'STORY_DATA',
     icon: 'gear',
     description: 'Um inventor sombrio em um mundo de bronze e vapor'
+  },
+  {
+    id: 'kaelen',
+    name: 'Kaelen Ashwalker',
+    shortName: 'Kaelen',
+    theme: 'wildfire-primal',
+    storyData: 'KAELEN_STORY_DATA',
+    icon: 'flame',
+    description: 'Guardião das florestas queimadas, onde a destruição é o prelúdio da vida'
   },
   // Futuros personagens serão adicionados aqui
 ];
@@ -147,6 +156,30 @@ export const THEME_CONFIGS: Record<ThemeType, ThemeConfig> = {
       display: 'Cinzel',
       body: 'Cormorant Garamond',
       accent: 'Cinzel',
+    }
+  },
+  'wildfire-primal': {
+    id: 'wildfire-primal',
+    name: 'Renascimento das Cinzas',
+    cssClass: 'theme-wildfire',
+    colors: {
+      primary: '#ff4500', // Laranja brasa
+      secondary: '#8b0000', // Vermelho sangue seco
+      accent: '#7cfc00', // Verde broto neon
+      background: '#1a1a1a', // Cinza carvão
+      surface: '#2d2d2d', // Superfície cinza escuro
+      text: '#e6e6fa', // Cinza fumaça claro
+      textMuted: '#a0a0a0', // Cinza médio
+    },
+    textures: {
+      main: 'charred-wood',
+      overlay: 'embers',
+      border: 'ember-glow',
+    },
+    fonts: {
+      display: 'Uncial Antiqua',
+      body: 'Merriweather',
+      accent: 'Cinzel Decorative',
     }
   }
 };
